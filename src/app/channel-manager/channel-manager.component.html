@@ -1,0 +1,491 @@
+<div class="flex flex-col h-[calc(100vh-8rem)] animate-fade-in-up">
+  
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-[#111418] dark:text-white tracking-tight">Channel Manager</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Map internal units to OTA listings and manage iCal synchronizations.</p>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <button class="px-4 py-2 bg-white dark:bg-[#1c2936] border border-gray-200 dark:border-[#324d67] text-gray-700 dark:text-gray-200 rounded-lg text-sm font-bold hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors flex items-center gap-2">
+        <span class="material-symbols-outlined text-[18px]">history</span>
+        Sync Logs
+      </button>
+      <button 
+        (click)="forceSync()"
+        class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-lg shadow-primary/20"
+        [disabled]="isSyncing()"
+      >
+        <span class="material-symbols-outlined text-[18px]" [class.animate-spin]="isSyncing()">sync</span>
+        {{ isSyncing() ? 'Syncing...' : 'Force Sync All' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex items-center gap-8 border-b border-gray-200 dark:border-[#324d67] mb-6">
+    <button 
+      (click)="setActiveTab('api')"
+      class="pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2"
+      [class.text-primary]="activeTab() === 'api'"
+      [class.border-primary]="activeTab() === 'api'"
+      [class.text-gray-500]="activeTab() !== 'api'"
+      [class.border-transparent]="activeTab() !== 'api'"
+      [class.hover:text-gray-700]="activeTab() !== 'api'"
+      [class.dark:hover:text-gray-300]="activeTab() !== 'api'"
+    >
+      <span class="material-symbols-outlined text-[18px]">hub</span>
+      API / OTA Mapping
+    </button>
+    <button 
+      (click)="setActiveTab('ical')"
+      class="pb-3 text-sm font-bold transition-all border-b-2 flex items-center gap-2"
+      [class.text-primary]="activeTab() === 'ical'"
+      [class.border-primary]="activeTab() === 'ical'"
+      [class.text-gray-500]="activeTab() !== 'ical'"
+      [class.border-transparent]="activeTab() !== 'ical'"
+      [class.hover:text-gray-700]="activeTab() !== 'ical'"
+      [class.dark:hover:text-gray-300]="activeTab() !== 'ical'"
+    >
+      <span class="material-symbols-outlined text-[18px]">calendar_month</span>
+      iCal Connections
+    </button>
+  </div>
+
+  <!-- Content Area -->
+  <div class="flex-1 overflow-y-auto">
+    
+    @if (activeTab() === 'api') {
+      <div class="animate-fade-in space-y-6">
+        
+        <!-- Status Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Airbnb -->
+          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm relative group">
+            <button 
+              (click)="openConfig('airbnb')"
+              class="absolute top-4 right-4 text-gray-400 hover:text-primary transition-colors"
+              title="Configure API"
+            >
+               <span class="material-symbols-outlined">settings</span>
+            </button>
+            
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 rounded-full border border-[#ff385c] flex items-center justify-center bg-[#ff385c]/10 text-[#ff385c]">
+                <span class="font-bold text-lg">Ab</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Airbnb</h3>
+                <div class="flex items-center gap-2 mt-1">
+                  @if (otaConfigs().airbnb.isEnabled) {
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Connected</span>
+                  } @else {
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Disabled</span>
+                  }
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-end justify-between border-t border-gray-100 dark:border-[#324d67] pt-4">
+               <div class="text-xs text-gray-400">
+                  Client ID: <span class="font-mono text-gray-600 dark:text-gray-300">{{ otaConfigs().airbnb.clientId?.slice(0,6) }}...</span>
+               </div>
+               <div class="text-right">
+                 <div class="text-xl font-bold text-[#111418] dark:text-white">{{ stats().airbnb.connected }}</div>
+                 <div class="text-xs text-gray-500">Listings</div>
+               </div>
+            </div>
+          </div>
+
+          <!-- Booking.com -->
+          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm relative group">
+            <button 
+               (click)="openConfig('booking')"
+               class="absolute top-4 right-4 text-gray-400 hover:text-primary transition-colors"
+               title="Configure API"
+            >
+               <span class="material-symbols-outlined">settings</span>
+            </button>
+
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 rounded-full border border-[#003580] flex items-center justify-center bg-[#003580]/10 text-[#003580]">
+                <span class="font-bold text-lg">B.</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Booking.com</h3>
+                 <div class="flex items-center gap-2 mt-1">
+                  @if (otaConfigs().booking.isEnabled) {
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Connected</span>
+                  } @else {
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Disabled</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-end justify-between border-t border-gray-100 dark:border-[#324d67] pt-4">
+               <div class="text-xs text-gray-400">
+                  Hotel ID: <span class="font-mono text-gray-600 dark:text-gray-300">{{ otaConfigs().booking.hotelId || '--' }}</span>
+               </div>
+               <div class="text-right">
+                <div class="text-xl font-bold text-[#111418] dark:text-white">{{ stats().booking.connected }}</div>
+                <div class="text-xs text-gray-500">Rooms</div>
+               </div>
+            </div>
+          </div>
+
+          <!-- Expedia -->
+          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-5 shadow-sm relative group transition-all" [class.opacity-60]="!otaConfigs().expedia.isEnabled">
+            <button 
+               (click)="openConfig('expedia')"
+               class="absolute top-4 right-4 text-gray-400 hover:text-primary transition-colors"
+               title="Configure API"
+            >
+               <span class="material-symbols-outlined">settings</span>
+            </button>
+
+            <div class="flex items-center gap-4 mb-4">
+              <div class="w-12 h-12 rounded-full border border-yellow-400 flex items-center justify-center bg-yellow-400/10 text-yellow-600">
+                <span class="font-bold text-lg">E</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Expedia</h3>
+                <div class="flex items-center gap-2 mt-1">
+                   @if (otaConfigs().expedia.isEnabled) {
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Connected</span>
+                  } @else {
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">Disabled</span>
+                  }
+                </div>
+              </div>
+            </div>
+            
+             <div class="flex items-end justify-between border-t border-gray-100 dark:border-[#324d67] pt-4">
+               <div class="text-xs text-gray-400">
+                  API Key: <span class="font-mono text-gray-600 dark:text-gray-300">{{ otaConfigs().expedia.apiKey ? '******' : '--' }}</span>
+               </div>
+               <div class="text-right">
+                  <div class="text-xl font-bold text-[#111418] dark:text-white">{{ stats().expedia.connected }}</div>
+                  <div class="text-xs text-gray-500">Listings</div>
+               </div>
+             </div>
+          </div>
+        </div>
+
+        <!-- Mapping Table -->
+        <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] overflow-hidden shadow-sm">
+          <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between bg-gray-50 dark:bg-[#1c2936]">
+            <h3 class="font-bold text-[#111418] dark:text-white">Unit Mapping Configuration</h3>
+            <div class="flex items-center gap-3 text-xs text-gray-500">
+               <div class="flex items-center gap-1">
+                 <span class="w-3 h-3 border border-primary bg-primary/20 rounded"></span> Mapped
+               </div>
+               <div class="flex items-center gap-1">
+                 <span class="w-3 h-3 border border-gray-500 rounded"></span> Unmapped
+               </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-[#111a22] border-b border-gray-200 dark:border-[#324d67]">
+                <tr>
+                  <th class="px-6 py-3 font-bold w-1/4">Internal Unit (Hierarchy)</th>
+                  <th class="px-6 py-3 font-bold">Airbnb Listing ID</th>
+                  <th class="px-6 py-3 font-bold">Booking.com Room ID</th>
+                  <th class="px-6 py-3 font-bold w-32">Markup %</th>
+                  <th class="px-6 py-3 font-bold text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-[#324d67]">
+                @for (group of groupedMappings(); track group[0]) {
+                  <!-- Group Header Row -->
+                  <tr class="bg-gray-50/50 dark:bg-[#18232e]">
+                    <td colspan="5" class="px-6 py-2 text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+                      {{ group[0] }}
+                    </td>
+                  </tr>
+                  
+                  <!-- Unit Rows -->
+                  @for (item of group[1]; track item.id) {
+                    <tr class="bg-white dark:bg-[#1c2936] hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors">
+                      <td class="px-6 py-4 font-medium text-[#111418] dark:text-white flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-gray-400">home</span>
+                        {{ item.unitName }}
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="relative">
+                          <input 
+                            type="text" 
+                            [(ngModel)]="item.airbnbId"
+                            placeholder="e.g. 18239012"
+                            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-1.5 text-xs text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500"
+                          >
+                          <span class="absolute right-2 top-1.5 text-[10px] text-gray-500 font-bold">ABNB</span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="relative">
+                          <input 
+                            type="text" 
+                            [(ngModel)]="item.bookingId"
+                            placeholder="e.g. 98321_02"
+                            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-1.5 text-xs text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500"
+                          >
+                          <span class="absolute right-2 top-1.5 text-[10px] text-gray-500 font-bold">BKG</span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="relative">
+                           <input 
+                            type="number" 
+                            [(ngModel)]="item.markup"
+                            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-1.5 text-xs font-bold text-center text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary"
+                          >
+                          <span class="absolute right-8 top-1.5 text-gray-500 text-xs">%</span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 text-right">
+                        <button 
+                          (click)="toggleMap(item.id)"
+                          class="px-4 py-1.5 rounded text-xs font-bold border transition-all"
+                          [class.bg-primary]="item.isMapped"
+                          [class.border-primary]="item.isMapped"
+                          [class.text-white]="item.isMapped"
+                          [class.bg-transparent]="!item.isMapped"
+                          [class.border-gray-500]="!item.isMapped"
+                          [class.text-gray-500]="!item.isMapped"
+                          [class.dark:text-gray-400]="!item.isMapped"
+                          [class.hover:border-primary]="!item.isMapped"
+                          [class.hover:text-primary]="!item.isMapped"
+                        >
+                          {{ item.isMapped ? 'Mapped' : 'Map' }}
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <!-- iCal View -->
+      <div class="animate-fade-in space-y-6">
+        <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 p-4 rounded-xl flex gap-3">
+          <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
+          <div class="text-sm text-blue-800 dark:text-blue-300">
+            <strong class="block mb-1">iCal Synchronization</strong>
+            Use the Import URL to receive bookings from external calendars. Use the Export URL to share your availability with other platforms. 
+            <span class="opacity-75">Sync occurs every 15 minutes automatically.</span>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] overflow-hidden shadow-sm">
+           <table class="w-full text-sm text-left">
+              <thead class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-[#111a22] border-b border-gray-200 dark:border-[#324d67]">
+                <tr>
+                  <th class="px-6 py-3 font-bold w-1/4">Unit Name</th>
+                  <th class="px-6 py-3 font-bold">Import iCal URL (External Source)</th>
+                  <th class="px-6 py-3 font-bold">Export iCal URL (ApartEl)</th>
+                  <th class="px-6 py-3 font-bold text-right">Last Sync</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 dark:divide-[#324d67]">
+                @for (ical of icalConnections(); track ical.id) {
+                   <tr class="bg-white dark:bg-[#1c2936] hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors">
+                      <td class="px-6 py-4 font-bold text-[#111418] dark:text-white">
+                         {{ ical.unitName }}
+                      </td>
+                      <td class="px-6 py-4">
+                         <input 
+                            type="text" 
+                            [(ngModel)]="ical.importUrl"
+                            placeholder="Paste .ics link here..."
+                            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-xs text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary placeholder-gray-500"
+                          >
+                      </td>
+                      <td class="px-6 py-4">
+                         <div class="flex gap-2">
+                            <input 
+                              readonly
+                              type="text" 
+                              [value]="ical.exportUrl"
+                              class="w-full bg-gray-100 dark:bg-[#253545] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-xs text-gray-500 dark:text-gray-400 select-all cursor-pointer"
+                            >
+                            <button 
+                              (click)="copyToClipboard(ical.exportUrl)"
+                              class="p-2 bg-gray-100 dark:bg-[#253545] hover:bg-gray-200 dark:hover:bg-[#2f4356] rounded-md text-gray-500 transition-colors"
+                              title="Copy URL"
+                            >
+                               <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                            </button>
+                         </div>
+                      </td>
+                      <td class="px-6 py-4 text-right font-mono text-xs text-gray-500">
+                         {{ ical.lastSync }}
+                      </td>
+                   </tr>
+                }
+              </tbody>
+           </table>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Configuration Modal -->
+  @if (configuringChannel()) {
+     <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in fixed">
+        <div class="bg-white dark:bg-[#1c2936] w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 dark:border-[#324d67] overflow-hidden flex flex-col">
+           <!-- Modal Header -->
+           <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                 <div class="w-8 h-8 rounded-full flex items-center justify-center"
+                     [class.bg-[#ff385c]/10]="configuringChannel() === 'airbnb'"
+                     [class.text-[#ff385c]]="configuringChannel() === 'airbnb'"
+                     [class.bg-[#003580]/10]="configuringChannel() === 'booking'"
+                     [class.text-[#003580]]="configuringChannel() === 'booking'"
+                     [class.bg-yellow-400/10]="configuringChannel() === 'expedia'"
+                     [class.text-yellow-600]="configuringChannel() === 'expedia'"
+                 >
+                    @if (configuringChannel() === 'airbnb') { Ab }
+                    @else if (configuringChannel() === 'booking') { B. }
+                    @else { E }
+                 </div>
+                 <h3 class="text-lg font-bold text-[#111418] dark:text-white capitalize">
+                    {{ configuringChannel() }} Configuration
+                 </h3>
+              </div>
+              <button (click)="closeConfig()" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                 <span class="material-symbols-outlined">close</span>
+              </button>
+           </div>
+           
+           <!-- Modal Body -->
+           <div class="p-6 space-y-5">
+              
+              <!-- Enable Switch -->
+              <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#111a22] rounded-lg border border-gray-100 dark:border-[#324d67]">
+                 <div>
+                    <div class="text-sm font-bold text-[#111418] dark:text-white">Enable Connection</div>
+                    <div class="text-xs text-gray-500">Allow availability updates and booking imports</div>
+                 </div>
+                 <button 
+                    type="button" 
+                    (click)="updateTempConfig('isEnabled', !tempConfig().isEnabled)"
+                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    [class.bg-green-500]="tempConfig().isEnabled"
+                    [class.bg-gray-300]="!tempConfig().isEnabled"
+                    [class.dark:bg-gray-600]="!tempConfig().isEnabled"
+                >
+                    <span 
+                        class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                        [class.translate-x-5]="tempConfig().isEnabled"
+                        [class.translate-x-0]="!tempConfig().isEnabled"
+                    ></span>
+                </button>
+              </div>
+
+              @if (configuringChannel() === 'airbnb') {
+                  <div class="space-y-4">
+                     <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Client ID</label>
+                        <input 
+                           type="text" 
+                           [ngModel]="tempConfig().clientId"
+                           (ngModelChange)="updateTempConfig('clientId', $event)"
+                           class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm font-mono text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                        >
+                     </div>
+                     <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Client Secret</label>
+                        <input 
+                           type="password" 
+                           [ngModel]="tempConfig().clientSecret"
+                           (ngModelChange)="updateTempConfig('clientSecret', $event)"
+                           class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm font-mono text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                        >
+                     </div>
+                  </div>
+              }
+
+              @if (configuringChannel() === 'booking') {
+                 <div class="space-y-4">
+                     <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Hotel / Property ID</label>
+                        <input 
+                           type="text" 
+                           [ngModel]="tempConfig().hotelId"
+                           (ngModelChange)="updateTempConfig('hotelId', $event)"
+                           class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm font-mono text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                        >
+                     </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                           <label class="text-xs font-bold text-gray-500 uppercase">Machine Username</label>
+                           <input 
+                              type="text" 
+                              [ngModel]="tempConfig().username"
+                              (ngModelChange)="updateTempConfig('username', $event)"
+                              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                           >
+                        </div>
+                        <div class="space-y-1.5">
+                           <label class="text-xs font-bold text-gray-500 uppercase">Password</label>
+                           <input 
+                              type="password" 
+                              [ngModel]="tempConfig().password"
+                              (ngModelChange)="updateTempConfig('password', $event)"
+                              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                           >
+                        </div>
+                     </div>
+                  </div>
+              }
+
+              @if (configuringChannel() === 'expedia') {
+                 <div class="space-y-4">
+                     <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 uppercase">API Key</label>
+                        <input 
+                           type="text" 
+                           [ngModel]="tempConfig().apiKey"
+                           (ngModelChange)="updateTempConfig('apiKey', $event)"
+                           class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm font-mono text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                        >
+                     </div>
+                     <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Shared Secret</label>
+                        <input 
+                           type="password" 
+                           [ngModel]="tempConfig().sharedSecret"
+                           (ngModelChange)="updateTempConfig('sharedSecret', $event)"
+                           class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm font-mono text-[#111418] dark:text-white focus:ring-1 focus:ring-primary"
+                        >
+                     </div>
+                  </div>
+              }
+
+           </div>
+
+           <!-- Footer -->
+           <div class="px-6 py-4 bg-gray-50 dark:bg-[#111a22] border-t border-gray-200 dark:border-[#324d67] flex justify-end gap-3">
+              <button (click)="closeConfig()" class="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#253545] rounded-lg">Cancel</button>
+              <button 
+                (click)="saveConfig()" 
+                class="px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg shadow-lg shadow-primary/25"
+              >Save Settings</button>
+           </div>
+        </div>
+     </div>
+  }
+</div>
