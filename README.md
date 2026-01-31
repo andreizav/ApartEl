@@ -67,7 +67,7 @@ npm run server
 ```env
 PORT=4000
 JWT_SECRET=your_secret_key
-CORS_ORIGIN=http://localhost:4200
+CORS_ORIGIN=http://localhost:3000
 ```
 
 #### 2. Start the Frontend Application
@@ -77,7 +77,7 @@ In a new terminal window:
 # From the project root
 npm run dev
 ```
-*App runs at `http://localhost:4200`*
+*App runs at `http://localhost:3000`*
 
 ### Default Login
 - **Email**: `alice@demo.com`
