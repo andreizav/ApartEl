@@ -58,7 +58,7 @@ export class StaffComponent implements AfterViewChecked {
         const end = new Date(b.endDate);
         return end >= now && !b.assignedCleanerId && b.source !== 'blocked';
       })
-      .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   });
 
   // --- Lifecycle ---

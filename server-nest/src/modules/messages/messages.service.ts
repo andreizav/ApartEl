@@ -18,13 +18,29 @@ export class MessagesService {
             throw new BadRequestException('Client phone and text are required');
         }
 
-        // Find client by phone number
-        const client = await this.prisma.client.findFirst({
+        // Find client by phone number or create a minimal one
+        let client = await this.prisma.client.findFirst({
             where: { tenantId, phoneNumber: clientPhone }
         });
 
         if (!client) {
-            throw new NotFoundException('Client not found');
+            client = await this.prisma.client.create({
+                data: {
+                    id: `c-auto-${Date.now()}`,
+                    tenantId,
+                    phoneNumber: clientPhone,
+                    name: clientPhone,
+                    platform: platform || 'whatsapp',
+                    status: 'New',
+                    unreadCount: 0,
+                    lastActive: new Date(),
+                    createdAt: new Date(),
+                    avatar: `https://picsum.photos/seed/${clientPhone}/100/100`,
+                    email: '',
+                    address: '',
+                    country: ''
+                }
+            });
         }
 
         const msgId = `msg-${sender}-${Date.now()}`;

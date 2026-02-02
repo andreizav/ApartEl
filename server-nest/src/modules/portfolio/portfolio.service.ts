@@ -17,33 +17,31 @@ export class PortfolioService {
     async update(tenantId: string, portfolio: any[]) {
         if (!Array.isArray(portfolio)) throw new BadRequestException('portfolio must be an array');
 
-        // Delete existing groups and units for this tenant
-        const existingGroups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            select: { id: true }
-        });
-        const groupIds = existingGroups.map(g => g.id);
+        await this.prisma.$transaction(async (tx) => {
+            for (const group of portfolio) {
+                // 1. Upsert the Group
+                await tx.portfolioGroup.upsert({
+                    where: { id: group.id },
+                    update: {
+                        name: group.name,
+                        expanded: group.expanded ?? true,
+                        isMerge: group.isMerge ?? false
+                    },
+                    create: {
+                        id: group.id,
+                        tenantId,
+                        name: group.name,
+                        expanded: group.expanded ?? true,
+                        isMerge: group.isMerge ?? false
+                    }
+                });
 
-        // Delete units first (foreign key constraint)
-        await this.prisma.unit.deleteMany({
-            where: { groupId: { in: groupIds } }
-        });
-        await this.prisma.portfolioGroup.deleteMany({
-            where: { tenantId }
-        });
-
-        // Create new groups with units
-        for (const group of portfolio) {
-            await this.prisma.portfolioGroup.create({
-                data: {
-                    id: group.id,
-                    tenantId,
-                    name: group.name,
-                    expanded: group.expanded ?? true,
-                    isMerge: group.isMerge ?? false,
-                    units: {
-                        create: (group.units || []).map((u: any) => ({
-                            id: u.id,
+                // 2. Upsert the Units within the group
+                for (const u of (group.units || [])) {
+                    await tx.unit.upsert({
+                        where: { id: u.id },
+                        update: {
+                            groupId: group.id, // Ensure it's in the correct group
                             name: u.name,
                             internalName: u.internalName,
                             officialAddress: u.officialAddress,
@@ -54,11 +52,25 @@ export class PortfolioService {
                             accessCodes: u.accessCodes,
                             status: u.status ?? 'Active',
                             assignedCleanerId: u.assignedCleanerId
-                        }))
-                    }
+                        },
+                        create: {
+                            id: u.id,
+                            groupId: group.id,
+                            name: u.name,
+                            internalName: u.internalName,
+                            officialAddress: u.officialAddress,
+                            basePrice: u.basePrice,
+                            cleaningFee: u.cleaningFee,
+                            wifiSsid: u.wifiSsid,
+                            wifiPassword: u.wifiPassword,
+                            accessCodes: u.accessCodes,
+                            status: u.status ?? 'Active',
+                            assignedCleanerId: u.assignedCleanerId
+                        }
+                    });
                 }
-            });
-        }
+            }
+        });
 
         return this.findAll(tenantId);
     }

@@ -142,31 +142,38 @@ export class PortfolioService {
     otaConfigs?: Record<string, OtaConfig>;
     appSettings?: AppSettings;
   }) {
-    const revive = (obj: unknown): unknown => {
-      if (typeof obj === 'string' && /^\d{4}-\d{2}-\d{2}/.test(obj)) {
-        const d = new Date(obj);
-        return isNaN(d.getTime()) ? obj : d;
-      }
-      if (Array.isArray(obj)) return obj.map(revive);
-      if (obj && typeof obj === 'object') {
-        const o = { ...obj } as Record<string, unknown>;
-        for (const k of Object.keys(o)) o[k] = revive(o[k]);
-        return o;
-      }
-      return obj;
-    };
-    if (data.tenant != null) this.tenant.set(revive(data.tenant) as Tenant);
-    if (data.user != null) this.currentUser.set(revive(data.user) as Staff);
-    if (data.portfolio != null) this.portfolio.set(revive(data.portfolio) as PropertyGroup[]);
-    if (data.bookings != null) this.bookings.set(revive(data.bookings) as Booking[]);
-    if (data.clients != null) this.clients.set(revive(data.clients) as Client[]);
-    if (data.staff != null) this.staff.set(revive(data.staff) as Staff[]);
-    if (data.transactions != null) this.transactions.set(revive(data.transactions) as Transaction[]);
-    if (data.inventory != null) this.inventory.set(revive(data.inventory) as InventoryCategory[]);
-    if (data.channelMappings != null) this.channelMappings.set(revive(data.channelMappings) as ChannelMapping[]);
-    if (data.icalConnections != null) this.icalConnections.set(revive(data.icalConnections) as ICalConnection[]);
-    if (data.otaConfigs != null) this.otaConfigs.set(revive(data.otaConfigs) as Record<'airbnb' | 'booking' | 'expedia', OtaConfig>);
-    if (data.appSettings != null) this.appSettings.set(revive(data.appSettings) as AppSettings);
+    if (data.tenant != null) this.tenant.set(this.revive(data.tenant) as Tenant);
+    if (data.user != null) this.currentUser.set(this.revive(data.user) as Staff);
+    if (data.portfolio != null) this.portfolio.set(this.revive(data.portfolio) as PropertyGroup[]);
+    if (data.bookings != null) this.bookings.set(this.revive(data.bookings) as Booking[]);
+    if (data.clients != null) this.clients.set(this.revive(data.clients) as Client[]);
+    if (data.staff != null) this.staff.set(this.revive(data.staff) as Staff[]);
+    if (data.transactions != null) this.transactions.set(this.revive(data.transactions) as Transaction[]);
+    if (data.inventory != null) this.inventory.set(this.revive(data.inventory) as InventoryCategory[]);
+    if (data.channelMappings != null) this.channelMappings.set(this.revive(data.channelMappings) as ChannelMapping[]);
+    if (data.icalConnections != null) this.icalConnections.set(this.revive(data.icalConnections) as ICalConnection[]);
+    if (data.otaConfigs != null) {
+      this.otaConfigs.update(current => ({
+        ...current,
+        ...(this.revive(data.otaConfigs) as Record<'airbnb' | 'booking' | 'expedia', OtaConfig>)
+      }));
+    }
+    if (data.appSettings != null) this.appSettings.set(this.revive(data.appSettings) as AppSettings);
+  }
+
+  /** Recursively finds date-like strings and turns them into Date objects. */
+  revive(obj: unknown): unknown {
+    if (typeof obj === 'string' && /^\d{4}-\d{2}-\d{2}/.test(obj)) {
+      const d = new Date(obj);
+      return isNaN(d.getTime()) ? obj : d;
+    }
+    if (Array.isArray(obj)) return obj.map(o => this.revive(o));
+    if (obj && typeof obj === 'object') {
+      const o = { ...obj } as Record<string, unknown>;
+      for (const k of Object.keys(o)) o[k] = this.revive(o[k]);
+      return o;
+    }
+    return obj;
   }
 
   // --- Core Actions ---

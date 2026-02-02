@@ -115,7 +115,7 @@ export class ApiService {
   createBooking(booking: Booking): Observable<{ success: boolean; error?: string }> {
     return this.http.post<{ success: boolean; booking: Booking }>(`${this.apiUrl}/api/bookings`, booking).pipe(
       map((res) => {
-        this.portfolio.bookings.update((b) => [res.booking, ...b]);
+        this.portfolio.bookings.update((b) => [this.portfolio.revive(res.booking) as Booking, ...b]);
         return { success: true };
       }),
       catchError((err) => of({ success: false, error: err.error?.error || 'Failed to create booking' }))
@@ -125,7 +125,7 @@ export class ApiService {
   addClient(client: Client): Observable<boolean> {
     return this.http.post<Client>(`${this.apiUrl}/api/clients`, client).pipe(
       map((c) => {
-        this.portfolio.clients.update((list) => [c, ...list]);
+        this.portfolio.clients.update((list) => [this.portfolio.revive(c) as Client, ...list]);
         return true;
       }),
       catchError(() => of(false))
@@ -135,8 +135,9 @@ export class ApiService {
   updateClient(client: Client, originalPhone?: string): void {
     const phone = encodeURIComponent(originalPhone ?? client.phoneNumber);
     this.http.patch<Client>(`${this.apiUrl}/api/clients/${phone}`, client).subscribe((updated) => {
+      const revived = this.portfolio.revive(updated) as Client;
       this.portfolio.clients.update((list) =>
-        list.map((c) => (c.phoneNumber === (originalPhone ?? client.phoneNumber) ? updated : c))
+        list.map((c) => (c.phoneNumber === (originalPhone ?? client.phoneNumber) ? revived : c))
       );
     });
   }
@@ -153,10 +154,14 @@ export class ApiService {
     });
   }
 
-  updatePortfolio(portfolio: PropertyGroup[]): void {
-    this.http.put<PropertyGroup[]>(`${this.apiUrl}/api/portfolio`, portfolio).subscribe((data) => {
-      this.portfolio.portfolio.set(data);
-    });
+  updatePortfolio(portfolio: PropertyGroup[]): Observable<boolean> {
+    return this.http.put<PropertyGroup[]>(`${this.apiUrl}/api/portfolio`, portfolio).pipe(
+      map((data) => {
+        this.portfolio.portfolio.set(data);
+        return true;
+      }),
+      catchError(() => of(false))
+    );
   }
 
   deleteUnit(unitId: string): void {
@@ -165,10 +170,14 @@ export class ApiService {
     });
   }
 
-  updateInventory(inventory: InventoryCategory[]): void {
-    this.http.put<InventoryCategory[]>(`${this.apiUrl}/api/inventory`, inventory).subscribe((data) => {
-      this.portfolio.inventory.set(data);
-    });
+  updateInventory(inventory: InventoryCategory[]): Observable<boolean> {
+    return this.http.put<InventoryCategory[]>(`${this.apiUrl}/api/inventory`, inventory).pipe(
+      map((data) => {
+        this.portfolio.inventory.set(data);
+        return true;
+      }),
+      catchError(() => of(false))
+    );
   }
 
   updateSettings(settings: Partial<AppSettings>): void {
@@ -234,7 +243,8 @@ export class ApiService {
 
   updateStaff(member: Staff): void {
     this.http.patch<Staff>(`${this.apiUrl}/api/staff/${member.id}`, member).subscribe((updated) => {
-      this.portfolio.staff.update((l) => l.map((m) => (m.id === member.id ? updated : m)));
+      const revived = this.portfolio.revive(updated) as Staff;
+      this.portfolio.staff.update((l) => l.map((m) => (m.id === member.id ? revived : m)));
     });
   }
 

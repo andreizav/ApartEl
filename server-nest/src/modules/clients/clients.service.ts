@@ -25,27 +25,36 @@ export class ClientsService {
         const existing = await this.prisma.client.findFirst({
             where: { tenantId, phoneNumber: client.phoneNumber }
         });
+
+        const data = {
+            tenantId,
+            phoneNumber: client.phoneNumber,
+            name: client.name,
+            email: client.email || '',
+            address: client.address || '',
+            country: client.country || '',
+            avatar: client.avatar,
+            platform: client.platform,
+            platformId: client.platformId,
+            status: client.status ?? 'New',
+            lastActive: client.lastActive ? new Date(client.lastActive) : new Date(),
+            createdAt: existing ? existing.createdAt : new Date(),
+            unreadCount: client.unreadCount ?? 0,
+            online: client.online ?? false,
+            previousBookings: client.previousBookings ?? 0
+        };
+
         if (existing) {
-            throw new ConflictException('Client with this phone already exists');
+            return this.prisma.client.update({
+                where: { id: existing.id },
+                data
+            });
         }
 
         return this.prisma.client.create({
             data: {
-                tenantId,
-                phoneNumber: client.phoneNumber,
-                name: client.name,
-                email: client.email,
-                address: client.address,
-                country: client.country,
-                avatar: client.avatar,
-                platform: client.platform,
-                platformId: client.platformId,
-                status: client.status ?? 'New',
-                lastActive: client.lastActive ? new Date(client.lastActive) : new Date(),
-                createdAt: new Date(),
-                unreadCount: client.unreadCount ?? 0,
-                online: client.online ?? false,
-                previousBookings: client.previousBookings ?? 0
+                id: client.id || `c-${Date.now()}`,
+                ...data
             }
         });
     }

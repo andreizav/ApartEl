@@ -23,7 +23,7 @@ export class InventoryComponent {
   modalType = signal<'category' | 'item'>('item');
   targetCategoryId = signal<string | null>(null);
   newItemName = signal('');
-  
+
   // Search
   searchQuery = signal('');
 
@@ -39,7 +39,7 @@ export class InventoryComponent {
 
   // Actions
   updateQuantity(categoryId: string, itemId: string, change: number) {
-    this.categories.update(cats => 
+    this.categories.update(cats =>
       cats.map(c => {
         if (c.id === categoryId) {
           return {
@@ -56,12 +56,12 @@ export class InventoryComponent {
         return c;
       })
     );
-    this.apiService.updateInventory(this.portfolioService.inventory());
+    this.apiService.updateInventory(this.portfolioService.inventory()).subscribe();
   }
 
   deleteItem(categoryId: string, itemId: string) {
-    if(!confirm('Delete this item?')) return;
-    this.categories.update(cats => 
+    if (!confirm('Delete this item?')) return;
+    this.categories.update(cats =>
       cats.map(c => {
         if (c.id === categoryId) {
           return { ...c, items: c.items.filter(i => i.id !== itemId) };
@@ -69,13 +69,13 @@ export class InventoryComponent {
         return c;
       })
     );
-    this.apiService.updateInventory(this.portfolioService.inventory());
+    this.apiService.updateInventory(this.portfolioService.inventory()).subscribe();
   }
 
   deleteCategory(categoryId: string) {
-    if(!confirm('Delete this entire category and all items?')) return;
+    if (!confirm('Delete this entire category and all items?')) return;
     this.categories.update(cats => cats.filter(c => c.id !== categoryId));
-    this.apiService.updateInventory(this.portfolioService.inventory());
+    this.apiService.updateInventory(this.portfolioService.inventory()).subscribe();
   }
 
   // Modal Logic
@@ -111,7 +111,7 @@ export class InventoryComponent {
           name: name,
           quantity: 0
         };
-        this.categories.update(cats => 
+        this.categories.update(cats =>
           cats.map(c => {
             if (c.id === catId) {
               return { ...c, items: [...c.items, newItem] };
@@ -121,7 +121,7 @@ export class InventoryComponent {
         );
       }
     }
-    this.apiService.updateInventory(this.portfolioService.inventory());
+    this.apiService.updateInventory(this.portfolioService.inventory()).subscribe();
     this.isModalOpen.set(false);
   }
 }

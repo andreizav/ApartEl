@@ -70,7 +70,13 @@ export class BootstrapService {
             where: { id: tenantId }
         });
 
-        const otaConfigs = tenantData?.otaConfigs ? JSON.parse(tenantData.otaConfigs) : {};
+        const storedOtaConfigs = tenantData?.otaConfigs ? JSON.parse(tenantData.otaConfigs) : {};
+        const otaConfigs = {
+            airbnb: { isEnabled: false },
+            booking: { isEnabled: false },
+            expedia: { isEnabled: false },
+            ...storedOtaConfigs
+        };
         const appSettings = {
             waStatus: tenantData?.waStatus ?? 'disconnected',
             autoDraft: tenantData?.autoDraft ?? true,

@@ -89,7 +89,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
         const normPhone = c.phoneNumber.replace(/[^\d+]/g, '');
         return c.name.toLowerCase().includes(query) || normPhone.includes(normQuery);
       })
-      .sort((a, b) => b.lastActive.getTime() - a.lastActive.getTime());
+      .sort((a, b) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime());
   });
 
   selectedClient = computed(() => {
@@ -102,7 +102,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
 
     return this.bookings()
       .filter(b => (!b.guestPhone || b.guestPhone.trim() === '') && b.source !== 'blocked')
-      .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
   });
 
   getBookingStatus(phoneNumber: string): ClientBookingStatus {
@@ -190,7 +190,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
   }
 
   getLastMessage(client: Client): string {
-    if (client.messages.length === 0) return 'No messages';
+    if (!client.messages || client.messages.length === 0) return 'No messages';
     const last = client.messages[client.messages.length - 1];
     const prefix = last.sender === 'agent' ? 'You: ' : last.sender === 'bot' ? 'Bot: ' : '';
     return prefix + last.text;

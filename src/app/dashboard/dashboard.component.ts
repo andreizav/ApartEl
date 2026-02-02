@@ -55,8 +55,18 @@ export class DashboardComponent implements OnInit {
       });
     } else if (d?.pendingClient) {
       const client = d.pendingClient;
-      this.portfolioService.clients.update(list => [client, ...list]);
-      this.router.navigate(['/dashboard/clients'], { queryParams: { phone: client.phoneNumber } });
+      this.apiService.addClient(client).subscribe(success => {
+        if (success) {
+          this.portfolioService.clients.update(list => {
+            // Check if already in list to avoid duplicates
+            if (list.some(c => c.phoneNumber === client.phoneNumber)) return list;
+            return [client, ...list];
+          });
+          this.router.navigate(['/dashboard/clients'], { queryParams: { phone: client.phoneNumber } });
+        } else {
+          alert('Failed to save client to the database.');
+        }
+      });
     } else if (d?.phone) {
       this.router.navigate(['/dashboard/clients'], { queryParams: { phone: d.phone, action: 'edit' } });
     }

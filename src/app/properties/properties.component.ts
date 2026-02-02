@@ -17,7 +17,7 @@ export class PropertiesComponent implements OnInit {
   private portfolioService = inject(PortfolioService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  
+
   portfolio = this.portfolioService.portfolio;
   allBookings = this.portfolioService.bookings;
   tenant = this.portfolioService.tenant;
@@ -40,7 +40,7 @@ export class PropertiesComponent implements OnInit {
         const exists = this.portfolio().some(g => g.units.some(u => u.id === unitId));
         if (exists) {
           this.selectUnit(unitId);
-          this.portfolio.update(groups => 
+          this.portfolio.update(groups =>
             groups.map(g => {
               if (g.units.some(u => u.id === unitId)) {
                 return { ...g, expanded: true };
@@ -80,7 +80,7 @@ export class PropertiesComponent implements OnInit {
   }
 
   toggleGroup(groupId: string) {
-    this.portfolio.update(groups => 
+    this.portfolio.update(groups =>
       groups.map(g => g.id === groupId ? { ...g, expanded: !g.expanded } : g)
     );
   }
@@ -90,11 +90,11 @@ export class PropertiesComponent implements OnInit {
     if (confirm('Are you sure you want to delete this group and all its units?')) {
       const groupToDelete = this.portfolio().find(g => g.id === groupId);
       const selectedId = this.selectedUnitId();
-      
+
       this.portfolio.update(groups => groups.filter(g => g.id !== groupId));
-      this.apiService.updatePortfolio(this.portfolioService.portfolio());
+      this.apiService.updatePortfolio(this.portfolioService.portfolio()).subscribe();
       if (selectedId && groupToDelete?.units.some(u => u.id === selectedId)) {
-         this.selectedUnitId.set(null);
+        this.selectedUnitId.set(null);
       }
     }
   }
@@ -105,8 +105,8 @@ export class PropertiesComponent implements OnInit {
     if (!unitId) return;
 
     if (confirm(`Are you sure you want to delete "${unitName}"? This will also archive its future availability.`)) {
-        this.apiService.deleteUnit(unitId);
-        this.selectedUnitId.set(null);
+      this.apiService.deleteUnit(unitId);
+      this.selectedUnitId.set(null);
     }
   }
 
@@ -117,7 +117,7 @@ export class PropertiesComponent implements OnInit {
         units: g.units.map(u => (u.id === unitId ? { ...u, status } : u))
       }))
     );
-    this.apiService.updatePortfolio(this.portfolioService.portfolio());
+    this.apiService.updatePortfolio(this.portfolioService.portfolio()).subscribe();
   }
 
   removePreviewGroup(groupId: string) {
@@ -185,7 +185,7 @@ export class PropertiesComponent implements OnInit {
         expanded: true
       };
       this.portfolio.update(p => [...p, newGroup]);
-      this.apiService.updatePortfolio(this.portfolioService.portfolio());
+      this.apiService.updatePortfolio(this.portfolioService.portfolio()).subscribe();
     } else {
       const groupId = this.newEntryGroupId();
       if (!groupId) return;
@@ -209,7 +209,7 @@ export class PropertiesComponent implements OnInit {
         }
         return g;
       }));
-      this.apiService.updatePortfolio(this.portfolioService.portfolio());
+      this.apiService.updatePortfolio(this.portfolioService.portfolio()).subscribe();
       this.selectUnit(newUnit.id);
     }
     this.isNewModalOpen.set(false);
@@ -244,7 +244,7 @@ export class PropertiesComponent implements OnInit {
       const row = rows[i];
       if (!row || row.length === 0) continue;
 
-      const groupName = row[1]; 
+      const groupName = row[1];
       const unitName = row[2];
 
       if (groupName && typeof groupName === 'string' && groupName.trim() !== '') {
@@ -290,7 +290,7 @@ export class PropertiesComponent implements OnInit {
     rawGroups.forEach(importedGroup => {
       const existingGroup = currentPortfolio.find(g => g.name.toLowerCase() === importedGroup.name.toLowerCase());
       if (existingGroup) {
-        const newUnits = importedGroup.units.filter(u => 
+        const newUnits = importedGroup.units.filter(u =>
           !existingGroup.units.some(eu => eu.name.toLowerCase() === u.name.toLowerCase())
         );
         if (newUnits.length > 0) {
@@ -313,6 +313,16 @@ export class PropertiesComponent implements OnInit {
   confirmImport() {
     const dataToImport = this.importPreview();
     if (dataToImport) {
+      // 1. Check Limits (Total units after import)
+      const currentUnits = this.portfolio().reduce((acc, g) => acc + g.units.length, 0);
+      const newUnitsCount = dataToImport.reduce((acc, g) => acc + g.units.length, 0);
+      const limit = this.tenant().maxUnits;
+
+      if (currentUnits + newUnitsCount > limit) {
+        this.portfolioService.triggerUpgrade(`Importing these units would exceed your limit of ${limit} units. Please upgrade your plan.`);
+        return;
+      }
+
       this.portfolio.update(current => {
         const updatedPortfolio = [...current];
         dataToImport.forEach(importGroup => {
@@ -325,17 +335,24 @@ export class PropertiesComponent implements OnInit {
               };
             }
           } else {
-            const newGroup = { ...importGroup, id: `g-${Date.now()}-${Math.random().toString(36).substr(2,5)}` };
+            const newGroup = { ...importGroup, id: `g-${Date.now()}-${Math.random().toString(36).substr(2, 5)}` };
             updatedPortfolio.push(newGroup);
           }
         });
         return updatedPortfolio;
       });
-      this.apiService.updatePortfolio(this.portfolioService.portfolio());
-      if (dataToImport.length > 0 && dataToImport[0].units.length > 0) {
-        this.selectedUnitId.set(dataToImport[0].units[0].id);
-      }
-      this.importPreview.set(null);
+
+      this.apiService.updatePortfolio(this.portfolioService.portfolio()).subscribe(success => {
+        if (success) {
+          alert('Properties imported and saved successfully!');
+          if (dataToImport.length > 0 && dataToImport[0].units.length > 0) {
+            this.selectedUnitId.set(dataToImport[0].units[0].id);
+          }
+          this.importPreview.set(null);
+        } else {
+          alert('Failed to save imported properties to the database. Please try again.');
+        }
+      });
     }
   }
 

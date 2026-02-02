@@ -285,6 +285,9 @@ export class CommunicationsComponent implements AfterViewChecked {
         messages: [newMessage]
       };
 
+      // Save message to database (backend will auto-create client)
+      this.apiService.saveLocalMessage(phone, text, 'client', platform).subscribe();
+
       // Add Notification for new client request
       this.portfolioService.addNotification({
         id: `notif-${Date.now()}`,
