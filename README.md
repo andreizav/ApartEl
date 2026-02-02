@@ -88,9 +88,12 @@ npm run dev
 
 ```
 d:\Projects\apartel.1.0\
-├── server/                 # Node.js Express API
+├── server-nest/            # NestJS Backend API
+│   ├── src/                # Source code
+│   │   ├── modules/        # Feature modules
+│   │   └── shared/         # Shared services
 │   ├── data.json           # File-based database
-│   └── index.js            # Server entry point
+│   └── main.ts             # Server entry point
 ├── src/
 │   ├── app/                # Angular Application Source
 │   │   ├── channel-manager # Channel management features
@@ -111,7 +114,7 @@ d:\Projects\apartel.1.0\
 
 ## 📡 API Endpoints
 
-The `server/` app provides the following RESTful endpoints:
+The `server-nest/` app provides the following RESTful endpoints:
 
 - **Auth**: `POST /api/auth/login`, `POST /api/auth/register`
 - **Core**: `GET /api/bootstrap` (Initial data load)
