@@ -2,6 +2,7 @@ import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PortfolioService, Booking } from '../shared/portfolio.service';
+import { ApiService } from '../shared/api.service';
 
 @Component({
   selector: 'app-channel-simulator',
@@ -11,6 +12,7 @@ import { PortfolioService, Booking } from '../shared/portfolio.service';
 })
 export class ChannelSimulatorComponent implements OnInit {
   private portfolioService = inject(PortfolioService);
+  private apiService = inject(ApiService);
 
   // State
   activeChannel = signal<'airbnb' | 'booking'>('airbnb');
@@ -167,19 +169,21 @@ export class ChannelSimulatorComponent implements OnInit {
       createdAt: new Date()
     };
 
-    // Push to shared state
-    this.bookings.update(current => [...current, newBooking]);
-
-    this.portfolioService.addNotification({
-      id: `sync-${Date.now()}`,
-      title: 'Channel Sync',
-      message: `New ${this.modalType() === 'block' ? 'block' : 'booking'} received from ${this.capitalize(source)} for ${this.selectedUnit()?.name}`,
-      type: 'info',
-      timestamp: new Date(),
-      data: {
-        action: 'calendar_focus',
-        date: newBooking.startDate.toISOString(),
-        unitId: newBooking.unitId
+    // Persist via ApiService
+    this.apiService.createBooking(newBooking).subscribe(res => {
+      if (res.success) {
+        this.portfolioService.addNotification({
+          id: `sync-${Date.now()}`,
+          title: 'Channel Sync',
+          message: `New ${this.modalType() === 'block' ? 'block' : 'booking'} received from ${this.capitalize(source)} for ${this.selectedUnit()?.name}`,
+          type: 'info',
+          timestamp: new Date(),
+          data: {
+            action: 'calendar_focus',
+            date: newBooking.startDate.toISOString(),
+            unitId: newBooking.unitId
+          }
+        });
       }
     });
 
@@ -290,18 +294,20 @@ END:VCALENDAR`;
           createdAt: new Date()
         };
 
-        this.bookings.update(b => [...b, newBooking]);
+        this.apiService.createBooking(newBooking).subscribe();
         count++;
       }
     });
 
-    this.portfolioService.addNotification({
-      id: `ical-sync-${Date.now()}`,
-      title: 'iCal Import',
-      message: `Imported ${count} events from iCal feed for ${this.selectedUnit()?.name}`,
-      type: 'success',
-      timestamp: new Date()
-    });
+    if (count > 0) {
+      this.portfolioService.addNotification({
+        id: `ical-sync-${Date.now()}`,
+        title: 'iCal Import',
+        message: `Imported ${count} events from iCal feed for ${this.selectedUnit()?.name}`,
+        type: 'success',
+        timestamp: new Date()
+      });
+    }
 
     this.isIcalModalOpen.set(false);
   }
