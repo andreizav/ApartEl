@@ -1,10 +1,11 @@
-<div class="flex flex-col h-[calc(100vh-8rem)] animate-fade-in-up">
-  
+<div class="flex flex-col h-full animate-fade-in-up">
+
   <!-- Header / Controls -->
   <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold text-[#111418] dark:text-white">Master Inventory</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">Manage categories, items, and current stock levels across all operations.</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400">Manage categories, items, and current stock levels across all
+        operations.</p>
     </div>
 
     <div class="flex gap-3 w-full sm:w-auto">
@@ -12,18 +13,12 @@
         <span class="absolute inset-y-0 left-0 flex items-center pl-3">
           <span class="material-symbols-outlined text-[20px] text-gray-400">search</span>
         </span>
-        <input 
-          type="text" 
-          [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event)"
-          class="block w-full sm:w-64 pl-10 pr-3 py-2 rounded-lg border-gray-200 dark:border-[#324d67] bg-white dark:bg-[#1c2936] text-sm text-[#111418] dark:text-white placeholder-gray-500 focus:ring-primary focus:border-primary transition-colors" 
-          placeholder="Search items..."
-        >
+        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
+          class="block w-full sm:w-64 pl-10 pr-3 py-2 rounded-lg border-gray-200 dark:border-[#324d67] bg-white dark:bg-[#1c2936] text-sm text-[#111418] dark:text-white placeholder-gray-500 focus:ring-primary focus:border-primary transition-colors"
+          placeholder="Search items...">
       </div>
-      <button 
-        (click)="openAddCategory()"
-        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/20"
-      >
+      <button (click)="openAddCategory()"
+        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/20">
         <span class="material-symbols-outlined text-[18px]">add</span>
         <span class="hidden sm:inline">Add Category</span>
       </button>
@@ -33,129 +28,120 @@
   <!-- Content Grid -->
   <div class="flex-1 overflow-y-auto pb-10">
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-      
+
       @for (category of filteredCategories(); track category.id) {
-        <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] overflow-hidden flex flex-col shadow-sm">
-          <!-- Category Header -->
-          <div class="px-5 py-3 bg-gray-50 dark:bg-[#111a22] border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
-            <h2 class="font-bold text-[#111418] dark:text-white flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-[20px]">folder_open</span>
-              {{ category.name }}
-            </h2>
-            <div class="flex items-center gap-2">
-              <span class="text-xs bg-gray-200 dark:bg-[#253545] text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">{{ category.items.length }} items</span>
-              <button 
-                (click)="deleteCategory(category.id)" 
-                class="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-                title="Delete Category"
-              >
-                <span class="material-symbols-outlined text-[18px]">delete</span>
+      <div
+        class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] overflow-hidden flex flex-col shadow-sm">
+        <!-- Category Header -->
+        <div
+          class="px-5 py-3 bg-gray-50 dark:bg-[#111a22] border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
+          <h2 class="font-bold text-[#111418] dark:text-white flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">folder_open</span>
+            {{ category.name }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-xs bg-gray-200 dark:bg-[#253545] text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full font-medium">{{
+              category.items.length }} items</span>
+            <button (click)="deleteCategory(category.id)"
+              class="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+              title="Delete Category">
+              <span class="material-symbols-outlined text-[18px]">delete</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Items List -->
+        <div class="divide-y divide-gray-100 dark:divide-[#324d67]">
+          @for (item of category.items; track item.id) {
+          <div
+            class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors group/item">
+            <div class="flex flex-col">
+              <span class="font-medium text-[#111418] dark:text-white">{{ item.name }}</span>
+              <span class="text-xs text-gray-400">ID: {{ item.id }}</span>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <!-- Quantity Control -->
+              <div
+                class="flex items-center bg-gray-100 dark:bg-[#111a22] rounded-lg p-1 border border-gray-200 dark:border-[#324d67]">
+                <button (click)="updateQuantity(category.id, item.id, -1)"
+                  class="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-[#253545] text-gray-600 dark:text-gray-300 hover:text-red-500 shadow-sm disabled:opacity-50"
+                  [disabled]="item.quantity <= 0">
+                  <span class="material-symbols-outlined text-[16px]">remove</span>
+                </button>
+                <span class="w-10 text-center text-sm font-bold font-mono text-[#111418] dark:text-white">{{
+                  item.quantity }}</span>
+                <button (click)="updateQuantity(category.id, item.id, 1)"
+                  class="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-[#253545] text-gray-600 dark:text-gray-300 hover:text-green-500 shadow-sm">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+
+              <!-- Delete Item -->
+              <button (click)="deleteItem(category.id, item.id)"
+                class="opacity-0 group-hover/item:opacity-100 text-gray-300 hover:text-red-500 transition-all"
+                title="Remove Item">
+                <span class="material-symbols-outlined text-[20px]">delete</span>
               </button>
             </div>
           </div>
-
-          <!-- Items List -->
-          <div class="divide-y divide-gray-100 dark:divide-[#324d67]">
-            @for (item of category.items; track item.id) {
-              <div class="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors group/item">
-                <div class="flex flex-col">
-                  <span class="font-medium text-[#111418] dark:text-white">{{ item.name }}</span>
-                  <span class="text-xs text-gray-400">ID: {{ item.id }}</span>
-                </div>
-                
-                <div class="flex items-center gap-4">
-                  <!-- Quantity Control -->
-                  <div class="flex items-center bg-gray-100 dark:bg-[#111a22] rounded-lg p-1 border border-gray-200 dark:border-[#324d67]">
-                    <button 
-                      (click)="updateQuantity(category.id, item.id, -1)"
-                      class="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-[#253545] text-gray-600 dark:text-gray-300 hover:text-red-500 shadow-sm disabled:opacity-50"
-                      [disabled]="item.quantity <= 0"
-                    >
-                      <span class="material-symbols-outlined text-[16px]">remove</span>
-                    </button>
-                    <span class="w-10 text-center text-sm font-bold font-mono text-[#111418] dark:text-white">{{ item.quantity }}</span>
-                    <button 
-                      (click)="updateQuantity(category.id, item.id, 1)"
-                      class="w-7 h-7 flex items-center justify-center rounded bg-white dark:bg-[#253545] text-gray-600 dark:text-gray-300 hover:text-green-500 shadow-sm"
-                    >
-                      <span class="material-symbols-outlined text-[16px]">add</span>
-                    </button>
-                  </div>
-
-                  <!-- Delete Item -->
-                  <button 
-                    (click)="deleteItem(category.id, item.id)"
-                    class="opacity-0 group-hover/item:opacity-100 text-gray-300 hover:text-red-500 transition-all"
-                    title="Remove Item"
-                  >
-                    <span class="material-symbols-outlined text-[20px]">delete</span>
-                  </button>
-                </div>
-              </div>
-            }
-            @if (category.items.length === 0) {
-              <div class="p-8 text-center text-gray-400 text-sm italic">
-                No items in this category yet.
-              </div>
-            }
+          }
+          @if (category.items.length === 0) {
+          <div class="p-8 text-center text-gray-400 text-sm italic">
+            No items in this category yet.
           </div>
-          
-          <!-- Add Item Footer -->
-          <button 
-            (click)="openAddItem(category.id)"
-            class="p-3 text-sm text-center font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-200 dark:border-[#324d67] flex items-center justify-center gap-2"
-          >
-            <span class="material-symbols-outlined text-[18px]">add</span>
-            Add Item to {{ category.name }}
-          </button>
+          }
         </div>
+
+        <!-- Add Item Footer -->
+        <button (click)="openAddItem(category.id)"
+          class="p-3 text-sm text-center font-bold text-primary hover:bg-primary/5 transition-colors border-t border-gray-200 dark:border-[#324d67] flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">add</span>
+          Add Item to {{ category.name }}
+        </button>
+      </div>
       }
-      
+
       @if (filteredCategories().length === 0) {
-        <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400">
-          <span class="material-symbols-outlined text-6xl mb-4 text-gray-200 dark:text-gray-700">inventory_2</span>
-          <p class="text-lg font-medium">No inventory items found</p>
-          <p class="text-sm">Try adjusting your search or add a new category.</p>
-        </div>
+      <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400">
+        <span class="material-symbols-outlined text-6xl mb-4 text-gray-200 dark:text-gray-700">inventory_2</span>
+        <p class="text-lg font-medium">No inventory items found</p>
+        <p class="text-sm">Try adjusting your search or add a new category.</p>
+      </div>
       }
     </div>
   </div>
 
   <!-- Modal -->
   @if (isModalOpen()) {
-    <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div class="bg-white dark:bg-[#1c2936] w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-[#324d67] overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
-          <h3 class="text-lg font-bold text-[#111418] dark:text-white">
-            {{ modalType() === 'category' ? 'New Category' : 'New Item' }}
-          </h3>
-          <button (click)="isModalOpen.set(false)" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-        
-        <div class="p-6">
-          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Name</label>
-          <input 
-            type="text" 
-            [ngModel]="newItemName()"
-            (ngModelChange)="newItemName.set($event)"
-            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
-            placeholder="e.g., Office Supplies"
-            autofocus
-            (keyup.enter)="submitModal()"
-          >
-        </div>
+  <div class="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+    <div
+      class="bg-white dark:bg-[#1c2936] w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-[#324d67] overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
+        <h3 class="text-lg font-bold text-[#111418] dark:text-white">
+          {{ modalType() === 'category' ? 'New Category' : 'New Item' }}
+        </h3>
+        <button (click)="isModalOpen.set(false)" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
 
-        <div class="px-6 py-4 bg-gray-50 dark:bg-[#111a22] border-t border-gray-200 dark:border-[#324d67] flex justify-end gap-3">
-           <button (click)="isModalOpen.set(false)" class="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#253545] rounded-lg">Cancel</button>
-           <button 
-             (click)="submitModal()" 
-             [disabled]="!newItemName()"
-             class="px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-           >Create</button>
-        </div>
+      <div class="p-6">
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Name</label>
+        <input type="text" [ngModel]="newItemName()" (ngModelChange)="newItemName.set($event)"
+          class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+          placeholder="e.g., Office Supplies" autofocus (keyup.enter)="submitModal()">
+      </div>
+
+      <div
+        class="px-6 py-4 bg-gray-50 dark:bg-[#111a22] border-t border-gray-200 dark:border-[#324d67] flex justify-end gap-3">
+        <button (click)="isModalOpen.set(false)"
+          class="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#253545] rounded-lg">Cancel</button>
+        <button (click)="submitModal()" [disabled]="!newItemName()"
+          class="px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Create</button>
       </div>
     </div>
+  </div>
   }
 </div>

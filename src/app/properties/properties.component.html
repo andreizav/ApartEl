@@ -1,4 +1,4 @@
-<div class="flex flex-col lg:flex-row h-[calc(100vh-8rem)] gap-6 animate-fade-in-up relative">
+<div class="flex flex-col lg:flex-row h-full gap-6 animate-fade-in-up relative">
 
   <!-- Left Column: Portfolio Sidebar -->
   <div
@@ -12,19 +12,25 @@
         <input #fileInput type="file" id="importFileInput" name="importFileInput" (change)="handleImport($event)"
           accept=".xlsx, .xls, .csv" class="hidden">
 
+        <!-- Export Button -->
+        <button (click)="exportPortfolio()"
+          class="flex items-center justify-center w-8 h-8 bg-white dark:bg-[#253545] border border-gray-200 dark:border-[#324d67] text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2f4356] transition-colors"
+          title="Export to Excel">
+          <span class="material-symbols-outlined text-[20px]">download</span>
+        </button>
+
         <!-- Import Button -->
         <button (click)="fileInput.click()"
-          class="flex items-center gap-1 bg-white dark:bg-[#253545] border border-gray-200 dark:border-[#324d67] text-gray-700 dark:text-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2f4356] transition-colors"
+          class="flex items-center justify-center w-8 h-8 bg-white dark:bg-[#253545] border border-gray-200 dark:border-[#324d67] text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2f4356] transition-colors"
           title="Import Excel (.xlsx)">
-          <span class="material-symbols-outlined text-[16px]">upload_file</span>
-          Import
+          <span class="material-symbols-outlined text-[20px]">upload_file</span>
         </button>
 
         <!-- New Button -->
         <button (click)="openNewModal()"
-          class="flex items-center gap-1 bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors">
-          <span class="material-symbols-outlined text-[16px]">add</span>
-          New
+          class="flex items-center justify-center w-8 h-8 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors"
+          title="Add New Group or Unit">
+          <span class="material-symbols-outlined text-[20px]">add</span>
         </button>
       </div>
     </div>
@@ -107,6 +113,19 @@
               Maintenance
             </button>
           </div>
+
+          <!-- SAVE BUTTON -->
+          @if (activeTab() === 'Basic Info' && editForm()) {
+          <button (click)="saveUnitInfo()" [disabled]="isSaving()"
+            class="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50">
+            @if (isSaving()) {
+            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            } @else {
+            <span class="material-symbols-outlined text-[18px]">save</span>
+            }
+            Save
+          </button>
+          }
         </div>
       </div>
 
@@ -127,82 +146,143 @@
     <!-- Scrollable Content Area -->
     <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 dark:bg-[#111a22]/30">
 
-      @if (activeTab() === 'Basic Info') {
-      <!-- Location & Address -->
-      <section class="bg-white dark:bg-[#1c2936] rounded-lg border border-gray-200 dark:border-[#324d67] p-5 shadow-sm">
-        <div class="flex items-center gap-2 mb-4 text-primary">
-          <span class="material-symbols-outlined">location_on</span>
-          <h3 class="font-bold text-[#111418] dark:text-white">Location & Address</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Internal Name</label>
-            <input type="text" id="internalName" name="internalName" [ngModel]="unit.internalName"
-              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Official Address</label>
-            <input type="text" id="officialAddress" name="officialAddress" [ngModel]="unit.officialAddress"
-              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
-          </div>
-        </div>
-      </section>
+      @if (activeTab() === 'Basic Info' && editForm(); as form) {
+      <div class="animate-fade-in space-y-6 pb-20">
+        <!-- Section: General Content -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Location Card -->
+          <div
+            class="md:col-span-2 bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/10 flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined">location_on</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Location & Identity</h3>
+                <p class="text-xs text-gray-500">Property name and official registration</p>
+              </div>
+            </div>
 
-      <!-- Base Pricing -->
-      <section class="bg-white dark:bg-[#1c2936] rounded-lg border border-gray-200 dark:border-[#324d67] p-5 shadow-sm">
-        <div class="flex items-center gap-2 mb-4 text-primary">
-          <span class="material-symbols-outlined">payments</span>
-          <h3 class="font-bold text-[#111418] dark:text-white">Base Pricing</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Base Price</label>
-            <div class="relative">
-              <span class="absolute left-3 top-2 text-gray-500">$</span>
-              <input type="number" id="basePrice" name="basePrice" [ngModel]="unit.basePrice"
-                class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md pl-7 pr-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Internal Name</label>
+                <input type="text" [(ngModel)]="form.internalName"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Public Display
+                  Name</label>
+                <input type="text" [(ngModel)]="form.name"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+              <div class="sm:col-span-2 space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Official
+                  Address</label>
+                <div class="relative">
+                  <input type="text" [(ngModel)]="form.officialAddress"
+                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                  <span
+                    class="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-gray-400">explore</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Cleaning Fee</label>
-            <div class="relative">
-              <span class="absolute left-3 top-2 text-gray-500">$</span>
-              <input type="number" id="cleaningFee" name="cleaningFee" [ngModel]="unit.cleaningFee"
-                class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md pl-7 pr-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- Connectivity & Access -->
-      <section class="bg-white dark:bg-[#1c2936] rounded-lg border border-gray-200 dark:border-[#324d67] p-5 shadow-sm">
-        <div class="flex items-center gap-2 mb-4 text-primary">
-          <span class="material-symbols-outlined">wifi</span>
-          <h3 class="font-bold text-[#111418] dark:text-white">Connectivity & Access</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Wifi SSID</label>
-            <input type="text" id="wifiSsid" name="wifiSsid" [ngModel]="unit.wifiSsid"
-              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Wifi Password</label>
-            <div class="relative">
-              <input type="text" id="wifiPassword" name="wifiPassword" [ngModel]="unit.wifiPassword"
-                class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors">
-              <span
-                class="material-symbols-outlined absolute right-3 top-2 text-[18px] text-gray-500 cursor-pointer">content_copy</span>
+          <!-- Pricing Card -->
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/10 flex items-center justify-center text-green-600">
+                <span class="material-symbols-outlined">payments</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Base Rates</h3>
+                <p class="text-xs text-gray-500">Default fees ($)</p>
+              </div>
+            </div>
+
+            <div class="space-y-5">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Nightly Rate</label>
+                <div class="relative">
+                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
+                  <input type="number" [(ngModel)]="form.basePrice"
+                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Cleaning Fee</label>
+                <div class="relative">
+                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
+                  <input type="number" [(ngModel)]="form.cleaningFee"
+                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-gray-500 uppercase tracking-wide">Access Codes (Door/Alarm)</label>
-          <textarea id="accessCodes" name="accessCodes" [ngModel]="unit.accessCodes" rows="3"
-            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors resize-none"></textarea>
-          <p class="text-[10px] text-gray-500 mt-1">This info will be sent to confirmed guests 24h before check-in.</p>
+
+        <!-- Section: Connectivity & Access -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/10 flex items-center justify-center text-purple-600">
+                <span class="material-symbols-outlined">wifi</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Guest Connectivity</h3>
+                <p class="text-xs text-gray-500">WiFi credentials for guests</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi SSID
+                  (Name)</label>
+                <input type="text" [(ngModel)]="form.wifiSsid"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="e.g. MyProp_WiFi">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi Password</label>
+                <input type="text" [(ngModel)]="form.wifiPassword"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm font-mono text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="********">
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-600">
+                <span class="material-symbols-outlined">key</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Smart Access</h3>
+                <p class="text-xs text-gray-500">Door and alarm codes</p>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Access
+                Instructions</label>
+              <textarea [(ngModel)]="form.accessCodes" rows="2"
+                class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                placeholder="Codes or instructions for the guest..."></textarea>
+              <p class="text-[10px] text-gray-400 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[12px]">info</span>
+                Sent automatically via WhatsApp/Telegram before check-in.
+              </p>
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
       }
       @else if (activeTab() === 'Guest History') {
       <div class="animate-fade-in">

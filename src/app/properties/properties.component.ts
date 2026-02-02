@@ -31,12 +31,15 @@ export class PropertiesComponent implements OnInit {
   newEntryName = signal('');
   newEntryGroupId = signal('');
 
+  editForm = signal<PropertyUnit | null>(null);
+  isSaving = signal(false);
+
   tabs = ['Basic Info', 'Guest History', 'Photos', 'Inventory', 'Settings'];
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      if (params['unitId']) {
-        const unitId = params['unitId'];
+      const unitId = params['unitId'] || this.selectedUnitId();
+      if (unitId) {
         const exists = this.portfolio().some(g => g.units.some(u => u.id === unitId));
         if (exists) {
           this.selectUnit(unitId);
@@ -48,7 +51,11 @@ export class PropertiesComponent implements OnInit {
               return g;
             })
           );
+        } else if (this.selectedUnitId()) {
+          this.selectUnit(this.selectedUnitId()!);
         }
+      } else if (this.selectedUnitId()) {
+        this.selectUnit(this.selectedUnitId()!);
       }
     });
   }
@@ -148,6 +155,43 @@ export class PropertiesComponent implements OnInit {
 
   selectUnit(unitId: string) {
     this.selectedUnitId.set(unitId);
+    // Find unit directly to be safe and synchronous
+    let foundUnit: PropertyUnit | null = null;
+    for (const group of this.portfolio()) {
+      const u = group.units.find(un => un.id === unitId);
+      if (u) {
+        foundUnit = u;
+        break;
+      }
+    }
+    if (foundUnit) {
+      this.editForm.set({ ...foundUnit });
+    }
+  }
+
+  saveUnitInfo() {
+    const updatedUnit = this.editForm();
+    if (!updatedUnit) return;
+
+    this.isSaving.set(true);
+
+    this.portfolio.update(groups => groups.map(g => ({
+      ...g,
+      units: g.units.map(u => u.id === updatedUnit.id ? { ...updatedUnit } : u)
+    })));
+
+    this.apiService.updatePortfolio(this.portfolio()).subscribe({
+      next: (success) => {
+        this.isSaving.set(false);
+        if (!success) {
+          alert('Failed to save changes.');
+        }
+      },
+      error: () => {
+        this.isSaving.set(false);
+        alert('An error occurred while saving.');
+      }
+    });
   }
 
   setActiveTab(tab: string) {
@@ -213,6 +257,36 @@ export class PropertiesComponent implements OnInit {
       this.selectUnit(newUnit.id);
     }
     this.isNewModalOpen.set(false);
+  }
+
+  exportPortfolio() {
+    const data: any[] = [];
+
+    // Header Row
+    data.push(['Group Name', 'Unit Name', 'Internal Name', 'Status']);
+
+    // Data Rows
+    for (const group of this.portfolio()) {
+      // Add Group Row (Optional, or just list units with their group)
+      if (group.units.length === 0) {
+        data.push([group.name, '', '', '']);
+      }
+
+      for (const unit of group.units) {
+        data.push([
+          group.name,
+          unit.name,
+          unit.internalName || '',
+          unit.status
+        ]);
+      }
+    }
+
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(data);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Portfolio');
+
+    XLSX.writeFile(wb, 'ApartEl_Portfolio.xlsx');
   }
 
   handleImport(event: Event) {
