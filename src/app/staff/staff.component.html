@@ -185,7 +185,7 @@
             </div>
          </div>
          }
-         @if (staff.messages.length === 0) {
+         @if ((staff.messages?.length || 0) === 0) {
          <div class="text-center text-gray-400 text-xs italic mt-10">No tasks assigned or messages yet.</div>
          }
       </div>

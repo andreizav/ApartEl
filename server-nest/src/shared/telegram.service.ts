@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { StoreService } from './store.service';
+import { PrismaService } from './prisma.service';
 
 @Injectable()
 export class TelegramService {
-    constructor(private storeService: StoreService) { }
+    constructor(private prisma: PrismaService) { }
 
     async syncUpdates(token: string, tenantId: string) {
         if (!token) return { count: 0, messages: [] };
 
-        const data = this.storeService.getTenantData(tenantId);
-        const settings = data.appSettings;
-        const lastId = settings.tgLastUpdateId || 0;
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) return { count: 0, messages: [] };
+
+        const lastId = tenant.tgLastUpdateId || 0;
+        const mainAdminGroupId = tenant.tgAdminGroupId || '';
 
         const url = `https://api.telegram.org/bot${token}/getUpdates?offset=${lastId + 1}`;
 
@@ -37,65 +41,86 @@ export class TelegramService {
 
             let processedCount = 0;
             const processedMessages: any[] = [];
-            const mainAdminGroupId = settings.tgAdminGroupId;
+            let maxUpdateId = lastId;
 
-            updates.forEach((update: any) => {
-                if (update.update_id > settings.tgLastUpdateId) {
-                    settings.tgLastUpdateId = update.update_id;
+            for (const update of updates) {
+                if (update.update_id > maxUpdateId) {
+                    maxUpdateId = update.update_id;
                 }
 
                 const msg = update.message;
-                if (!msg || !msg.text) return;
+                if (!msg || !msg.text) continue;
 
                 const chatId = msg.chat.id.toString();
                 const text = msg.text;
                 const senderName = msg.from.first_name + (msg.from.last_name ? ' ' + msg.from.last_name : '');
 
                 if (chatId !== mainAdminGroupId) {
-                    let client = data.clients.find((c: any) => c.platform === 'telegram' && c.platformId === chatId);
+                    // Find or create client
+                    let client = await this.prisma.client.findFirst({
+                        where: { tenantId, platform: 'telegram', platformId: chatId }
+                    });
 
                     if (!client) {
-                        const newClient = {
-                            phoneNumber: `tg-${chatId}`,
-                            name: senderName || `User ${chatId}`,
-                            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName || 'U')}&background=0088cc&color=fff`,
-                            email: '',
-                            address: '',
-                            country: '',
-                            platform: 'telegram',
-                            platformId: chatId,
-                            status: 'New',
-                            unreadCount: 1,
-                            online: true,
-                            lastActive: new Date().toISOString(),
-                            createdAt: new Date().toISOString(),
-                            previousBookings: 0,
-                            messages: []
-                        };
-                        data.clients.unshift(newClient);
-                        client = newClient;
+                        client = await this.prisma.client.create({
+                            data: {
+                                tenantId,
+                                phoneNumber: `tg-${chatId}`,
+                                name: senderName || `User ${chatId}`,
+                                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName || 'U')}&background=0088cc&color=fff`,
+                                email: '',
+                                address: '',
+                                country: '',
+                                platform: 'telegram',
+                                platformId: chatId,
+                                status: 'New',
+                                unreadCount: 1,
+                                online: true,
+                                lastActive: new Date(),
+                                createdAt: new Date(),
+                                previousBookings: 0
+                            }
+                        });
                     }
 
-                    const newMessage = {
-                        id: `msg-${msg.message_id}`,
-                        text: text,
-                        sender: 'client',
-                        timestamp: new Date(msg.date * 1000).toISOString(),
-                        platform: 'telegram',
-                        status: 'read'
-                    };
+                    const messageId = `msg-${msg.message_id}`;
+                    const existingMsg = await this.prisma.message.findUnique({
+                        where: { id: messageId }
+                    });
 
-                    if (!client.messages.find((m: any) => m.id === newMessage.id)) {
-                        client.messages.push(newMessage);
-                        client.lastActive = newMessage.timestamp;
-                        client.unreadCount += 1;
+                    if (!existingMsg) {
+                        const newMessage = await this.prisma.message.create({
+                            data: {
+                                id: messageId,
+                                clientId: client.id,
+                                text: text,
+                                sender: 'client',
+                                timestamp: new Date(msg.date * 1000),
+                                platform: 'telegram',
+                                status: 'read'
+                            }
+                        });
+
+                        await this.prisma.client.update({
+                            where: { id: client.id },
+                            data: {
+                                lastActive: newMessage.timestamp,
+                                unreadCount: { increment: 1 }
+                            }
+                        });
+
                         processedCount++;
                         processedMessages.push(newMessage);
                     }
                 }
+            }
+
+            // Update the last update ID
+            await this.prisma.tenant.update({
+                where: { id: tenantId },
+                data: { tgLastUpdateId: maxUpdateId }
             });
 
-            this.storeService.save();
             return { count: processedCount, messages: processedMessages };
 
         } catch (error: any) {

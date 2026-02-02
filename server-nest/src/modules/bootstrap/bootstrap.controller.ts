@@ -15,8 +15,8 @@ export class BootstrapController {
     }
 
     @Post('reset')
-    reset(@TenantId() tenantId: string) {
-        return this.bootstrapService.reset(tenantId);
+    reset(@TenantId() tenantId: string, @User() user: any) {
+        return this.bootstrapService.reset(tenantId, user?.id);
     }
 
     @Post('clear')

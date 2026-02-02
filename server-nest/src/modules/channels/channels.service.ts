@@ -1,110 +1,214 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { StoreService } from '../../shared/store.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
+import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class ChannelsService {
-    constructor(private storeService: StoreService) { }
+    constructor(private prisma: PrismaService) { }
 
-    getMappings(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.channelMappings;
-    }
-
-    updateMappings(tenantId: string, list: any[]) {
-        if (!Array.isArray(list)) throw new BadRequestException('channelMappings must be an array');
-        const data = this.storeService.getTenantData(tenantId);
-        data.channelMappings = list;
-        this.storeService.save();
-        return data.channelMappings;
-    }
-
-    getIcal(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.icalConnections;
-    }
-
-    updateIcal(tenantId: string, list: any[]) {
-        if (!Array.isArray(list)) throw new BadRequestException('icalConnections must be an array');
-        const data = this.storeService.getTenantData(tenantId);
-        data.icalConnections = list;
-        this.storeService.save();
-        return data.icalConnections;
-    }
-
-    getOta(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.otaConfigs;
-    }
-
-    updateOta(tenantId: string, configs: any) {
-        if (typeof configs !== 'object') throw new BadRequestException('otaConfigs must be an object');
-        const data = this.storeService.getTenantData(tenantId);
-        data.otaConfigs = { ...data.otaConfigs, ...configs };
-        this.storeService.save();
-        return data.otaConfigs;
-    }
-
-    sync(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        const portfolio = data.portfolio || [];
-        const allUnits: any[] = [];
-        portfolio.forEach((g: any) => {
-            (g.units || []).forEach((u: any) => allUnits.push({ unit: u, groupName: g.name }));
+    async getMappings(tenantId: string) {
+        // Get all units for this tenant to find their mappings
+        const groups = await this.prisma.portfolioGroup.findMany({
+            where: { tenantId },
+            include: { units: { include: { channelMappings: true } } }
         });
 
-        const currentMappings = data.channelMappings || [];
-        const currentIcals = data.icalConnections || [];
+        const mappings: any[] = [];
+        groups.forEach(g => {
+            g.units.forEach(u => {
+                u.channelMappings.forEach(m => mappings.push(m));
+            });
+        });
+        return mappings;
+    }
+
+    async updateMappings(tenantId: string, list: any[]) {
+        if (!Array.isArray(list)) throw new BadRequestException('channelMappings must be an array');
+
+        for (const mapping of list) {
+            await this.prisma.channelMapping.upsert({
+                where: { id: mapping.id },
+                update: {
+                    unitName: mapping.unitName,
+                    groupName: mapping.groupName,
+                    airbnbId: mapping.airbnbId,
+                    bookingId: mapping.bookingId,
+                    markup: mapping.markup,
+                    isMapped: mapping.isMapped,
+                    status: mapping.status
+                },
+                create: {
+                    id: mapping.id,
+                    unitId: mapping.unitId,
+                    unitName: mapping.unitName,
+                    groupName: mapping.groupName,
+                    airbnbId: mapping.airbnbId ?? '',
+                    bookingId: mapping.bookingId ?? '',
+                    markup: mapping.markup ?? 0,
+                    isMapped: mapping.isMapped ?? false,
+                    status: mapping.status ?? 'Inactive'
+                }
+            });
+        }
+
+        return this.getMappings(tenantId);
+    }
+
+    async getIcal(tenantId: string) {
+        const groups = await this.prisma.portfolioGroup.findMany({
+            where: { tenantId },
+            include: { units: { include: { icalConnections: true } } }
+        });
+
+        const connections: any[] = [];
+        groups.forEach(g => {
+            g.units.forEach(u => {
+                u.icalConnections.forEach(c => connections.push(c));
+            });
+        });
+        return connections;
+    }
+
+    async updateIcal(tenantId: string, list: any[]) {
+        if (!Array.isArray(list)) throw new BadRequestException('icalConnections must be an array');
+
+        for (const conn of list) {
+            await this.prisma.icalConnection.upsert({
+                where: { id: conn.id },
+                update: {
+                    unitName: conn.unitName,
+                    importUrl: conn.importUrl,
+                    exportUrl: conn.exportUrl,
+                    lastSync: conn.lastSync
+                },
+                create: {
+                    id: conn.id,
+                    unitId: conn.unitId,
+                    unitName: conn.unitName,
+                    importUrl: conn.importUrl ?? '',
+                    exportUrl: conn.exportUrl ?? '',
+                    lastSync: conn.lastSync ?? 'Never'
+                }
+            });
+        }
+
+        return this.getIcal(tenantId);
+    }
+
+    async getOta(tenantId: string) {
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) throw new NotFoundException('Tenant not found');
+        return tenant.otaConfigs ? JSON.parse(tenant.otaConfigs) : {};
+    }
+
+    async updateOta(tenantId: string, configs: any) {
+        if (typeof configs !== 'object') throw new BadRequestException('otaConfigs must be an object');
+
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) throw new NotFoundException('Tenant not found');
+
+        const currentConfigs = tenant.otaConfigs ? JSON.parse(tenant.otaConfigs) : {};
+        const updatedConfigs = { ...currentConfigs, ...configs };
+
+        await this.prisma.tenant.update({
+            where: { id: tenantId },
+            data: { otaConfigs: JSON.stringify(updatedConfigs) }
+        });
+
+        return updatedConfigs;
+    }
+
+    async sync(tenantId: string) {
+        const groups = await this.prisma.portfolioGroup.findMany({
+            where: { tenantId },
+            include: { units: true }
+        });
+
+        const allUnits: { unit: any; groupName: string }[] = [];
+        groups.forEach(g => {
+            g.units.forEach(u => allUnits.push({ unit: u, groupName: g.name }));
+        });
+
+        const currentMappings = await this.getMappings(tenantId);
+        const currentIcals = await this.getIcal(tenantId);
         const updatedMappings: any[] = [];
         const updatedIcals: any[] = [];
 
-        allUnits.forEach(({ unit, groupName }) => {
+        for (const { unit, groupName } of allUnits) {
             const existingMap = currentMappings.find((m: any) => m.unitId === unit.id);
-            updatedMappings.push(
-                existingMap
-                    ? { ...existingMap, unitName: unit.name, groupName }
-                    : { id: `cm-${unit.id}`, unitId: unit.id, unitName: unit.name, groupName, airbnbId: '', bookingId: '', markup: 0, isMapped: false, status: 'Inactive' }
-            );
+            if (existingMap) {
+                await this.prisma.channelMapping.update({
+                    where: { id: existingMap.id },
+                    data: { unitName: unit.name, groupName }
+                });
+                updatedMappings.push({ ...existingMap, unitName: unit.name, groupName });
+            } else {
+                const newMapping = await this.prisma.channelMapping.create({
+                    data: {
+                        id: `cm-${unit.id}`,
+                        unitId: unit.id,
+                        unitName: unit.name,
+                        groupName,
+                        airbnbId: '',
+                        bookingId: '',
+                        markup: 0,
+                        isMapped: false,
+                        status: 'Inactive'
+                    }
+                });
+                updatedMappings.push(newMapping);
+            }
 
             const existingIcal = currentIcals.find((i: any) => i.unitId === unit.id);
-            updatedIcals.push(
-                existingIcal
-                    ? { ...existingIcal, unitName: unit.name }
-                    : { id: `ical-${unit.id}`, unitId: unit.id, unitName: unit.name, importUrl: '', exportUrl: `https://api.apartel.app/cal/${tenantId}/${unit.id}.ics`, lastSync: 'Never' }
-            );
-        });
+            if (existingIcal) {
+                await this.prisma.icalConnection.update({
+                    where: { id: existingIcal.id },
+                    data: { unitName: unit.name }
+                });
+                updatedIcals.push({ ...existingIcal, unitName: unit.name });
+            } else {
+                const newIcal = await this.prisma.icalConnection.create({
+                    data: {
+                        id: `ical-${unit.id}`,
+                        unitId: unit.id,
+                        unitName: unit.name,
+                        importUrl: '',
+                        exportUrl: `https://api.apartel.app/cal/${tenantId}/${unit.id}.ics`,
+                        lastSync: 'Never'
+                    }
+                });
+                updatedIcals.push(newIcal);
+            }
+        }
 
-        data.channelMappings = updatedMappings;
-        data.icalConnections = updatedIcals;
-        this.storeService.save();
-
-        return { channelMappings: data.channelMappings, icalConnections: data.icalConnections };
+        return { channelMappings: updatedMappings, icalConnections: updatedIcals };
     }
 
     @Cron('0 */15 * * * *')
-    handleCron() {
+    async handleCron() {
         console.log('[Channels] Starting scheduled iCal sync...');
-        const state = this.storeService.getState();
-        if (!state || !state.dataByTenant) return;
 
-        let hasChanges = false;
-        Object.keys(state.dataByTenant).forEach(tenantId => {
-            const data = state.dataByTenant[tenantId];
-            const icalConnections = data.icalConnections || [];
+        const tenants = await this.prisma.tenant.findMany();
 
-            icalConnections.forEach((conn: any) => {
+        for (const tenant of tenants) {
+            const connections = await this.getIcal(tenant.id);
+
+            for (const conn of connections) {
                 if (conn.importUrl) {
-                    console.log(`[Channels] Syncing iCal for tenant ${tenantId}, unit ${conn.unitId} from ${conn.importUrl}`);
+                    console.log(`[Channels] Syncing iCal for tenant ${tenant.id}, unit ${conn.unitId} from ${conn.importUrl}`);
                     // Mock sync: Just update timestamp
-                    conn.lastSync = new Date().toISOString();
-                    hasChanges = true;
+                    await this.prisma.icalConnection.update({
+                        where: { id: conn.id },
+                        data: { lastSync: new Date().toISOString() }
+                    });
                 }
-            });
-        });
-
-        if (hasChanges) {
-            this.storeService.save();
-            console.log('[Channels] Sync state saved.');
+            }
         }
+
+        console.log('[Channels] Sync completed.');
     }
 }

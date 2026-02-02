@@ -72,6 +72,7 @@ export interface ChatMessage {
 }
 
 export interface Client {
+  id: string;
   phoneNumber: string;
   name: string;
   email: string;

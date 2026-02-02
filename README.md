@@ -55,21 +55,23 @@ ApartEl is a modern Property Management System (PMS) designed specifically for a
 You need to run both the backend API and the frontend application.
 
 #### 1. Start the Backend Server
-The server handles data persistence (JSON file-based) and API endpoints.
+The server handles data persistence using Prisma with a local SQLite database.
 
+First, set up your environment:
+1. Create a `.env` file in the `server-nest/` directory (see `.env.example`).
+2. Run database setup:
+```bash
+cd server-nest
+npx prisma generate
+npx prisma db push # Sync schema with dev.db
+```
+
+Then start the server:
 ```bash
 # From the project root
-npm start
+npm run server
 ```
 *API runs at `http://localhost:3333`*
-
-**Note:** Ensure you have a `.env` file in the `server-nest/` directory.
-```env
-PORT=3333
-JWT_SECRET=your_secret_key
-CORS_ORIGIN=http://localhost:3000
-TELEGRAM_BOT_TOKEN=your_token
-```
 
 #### 2. Start the Frontend Application
 In a new terminal window:
@@ -82,17 +84,18 @@ npm run dev
 
 ### Default Login
 - **Email**: `alice@demo.com`
-- **Password**: *(Check server seed data or use default if applicable)*
+- **Password**: `password` (if prompted, check `BootstrapService` for demo data)
 
 ## 📂 Project Structure
 
 ```
-d:\Projects\apartel.1.0\
+d:\Projects\ApartEl\
 ├── server-nest/            # NestJS Backend API
+│   ├── prisma/             # Prisma Schema & SQLite DB
+│   │   └── schema.prisma   # Database Models
 │   ├── src/                # Source code
 │   │   ├── modules/        # Feature modules
 │   │   └── shared/         # Shared services
-│   ├── data.json           # File-based database
 │   └── main.ts             # Server entry point
 ├── src/
 │   ├── app/                # Angular Application Source
@@ -100,6 +103,7 @@ d:\Projects\apartel.1.0\
 │   │   ├── dashboard       # Analytics dashboard
 │   │   ├── multi-calendar  # Booking calendar
 │   │   ├── properties      # Property management
+│   │   ├── db-simulator    # Real-time DB viewer
 │   │   └── ...             # Other feature modules
 │   ├── environments/       # Environment configurations
 │   └── ...
@@ -108,16 +112,16 @@ d:\Projects\apartel.1.0\
 
 ## 🔒 Security & Best Practices
 
-- **Environment Variables**: Never commit `.env` files.
+- **Environment Variables**: Never commit `.env` files. Use `.env.example` as a template.
 - **Authentication**: JWT-based authentication is handled by the backend.
-- **State Management**: Frontend uses local services; sensitive data is persisted only on the server.
+- **Database**: Prisma provides type-safe access to SQLite.
 
 ## 📡 API Endpoints
 
 The `server-nest/` app provides the following RESTful endpoints:
 
 - **Auth**: `POST /api/auth/login`, `POST /api/auth/register`
-- **Core**: `GET /api/bootstrap` (Initial data load)
+- **Core**: `GET /api/bootstrap`, `POST /api/bootstrap/reset` (Populate demo data)
 - **Properties**: `GET/PUT /api/portfolio`, `DELETE /api/portfolio/units/:id`
 - **Bookings**: `GET/POST /api/bookings`
 - **CRM**: `GET/POST/PATCH/DELETE /api/clients`, `GET/POST/PATCH/DELETE /api/staff`

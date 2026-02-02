@@ -1,31 +1,44 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { StoreService } from '../../shared/store.service';
+import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class TenantsService {
-    constructor(private storeService: StoreService) { }
+    constructor(private prisma: PrismaService) { }
 
-    getTenant(tenantId: string) {
-        const state = this.storeService.getState();
-        const tenant = state?.tenants.find(t => t.id === tenantId);
+    async getTenant(tenantId: string) {
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
         if (!tenant) throw new NotFoundException('Tenant not found');
-        return tenant;
+        return {
+            ...tenant,
+            features: tenant.features ? JSON.parse(tenant.features) : {}
+        };
     }
 
-    updateTenant(tenantId: string, updates: any) {
+    async updateTenant(tenantId: string, updates: any) {
         const { plan, maxUnits, features } = updates;
-        const state = this.storeService.getState();
-        const idx = state!.tenants.findIndex(t => t.id === tenantId);
 
-        if (idx < 0) throw new NotFoundException('Tenant not found');
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) throw new NotFoundException('Tenant not found');
 
-        if (plan) state!.tenants[idx].plan = plan;
-        if (typeof maxUnits === 'number') state!.tenants[idx].maxUnits = maxUnits;
-        if (features && typeof features === 'object') {
-            state!.tenants[idx].features = { ...state!.tenants[idx].features, ...features };
-        }
+        const currentFeatures = tenant.features ? JSON.parse(tenant.features) : {};
+        const updatedFeatures = features ? { ...currentFeatures, ...features } : currentFeatures;
 
-        this.storeService.save();
-        return state!.tenants[idx];
+        const updated = await this.prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+                ...(plan && { plan }),
+                ...(typeof maxUnits === 'number' && { maxUnits }),
+                features: JSON.stringify(updatedFeatures)
+            }
+        });
+
+        return {
+            ...updated,
+            features: JSON.parse(updated.features || '{}')
+        };
     }
 }

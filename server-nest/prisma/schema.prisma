@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Tenant {
+  id          String   @id
+  name        String
+  plan        String
+  status      String
+  maxUnits    Int
+  
+  // Features stored as JSON since it's a small config object
+  features    String   // serializing { staffBot: boolean, ... }
+
+  staff       Staff[]
+  bookings    Booking[]
+  transactions Transaction[]
+  clients     Client[]
+  
+  portfolioGroups PortfolioGroup[]
+  
+  // AppSettings for this tenant
+  waStatus       String?
+  autoDraft      Boolean @default(false)
+  tgBotToken     String?
+  tgAdminGroupId String?
+  aiApiKey       String?
+  aiSystemPrompt String?
+  ragSensitivity Float?
+  tgLastUpdateId Int      @default(0)
+  
+  // OTA Configs stored as JSON
+  otaConfigs     String? // serializing { airbnb: {...}, ... }
+
+  inventoryCategories InventoryCategory[]
+}
+
+model Staff {
+  id          String   @id
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  name        String
+  role        String
+  email       String
+  phone       String?
+  avatar      String?
+  status      String
+  unreadCount Int      @default(0)
+  online      Boolean  @default(false)
+  lastActive  DateTime?
+
+  // Messages are transient in the current JSON, mostly empty. 
+  // If we need to store them, we'd add a relation, but for Staff it seems unused in sample data.
+}
+
+model PortfolioGroup {
+  id        String  @id
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+  name      String
+  expanded  Boolean @default(true)
+  isMerge   Boolean @default(false)
+  
+  units     Unit[]
+}
+
+model Unit {
+  id              String   @id
+  groupId         String
+  group           PortfolioGroup @relation(fields: [groupId], references: [id])
+  
+  name            String
+  internalName    String?
+  officialAddress String?
+  basePrice       Float @default(0)
+  cleaningFee     Float @default(0)
+  wifiSsid        String?
+  wifiPassword    String?
+  accessCodes     String?
+  status          String
+  
+  assignedCleanerId String?
+  
+  bookings         Booking[]
+  channelMappings  ChannelMapping[]
+  icalConnections  IcalConnection[]
+}
+
+model Booking {
+  id                String   @id
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  unitId            String
+  unit              Unit     @relation(fields: [unitId], references: [id])
+  
+  guestName         String
+  guestPhone        String?
+  startDate         DateTime
+  endDate           DateTime
+  source            String
+  status            String
+  price             Float
+  createdAt         DateTime @default(now())
+  
+  assignedCleanerId String?
+}
+
+model Client {
+  id               String   @id @default(uuid()) // specific ID wrapper since JSON uses phone as key sometimes but we want stable ID
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  
+  phoneNumber      String?
+  name             String
+  email            String?
+  address          String?
+  country          String?
+  avatar           String?
+  platform         String?
+  platformId       String?
+  status           String
+  lastActive       DateTime?
+  createdAt        DateTime @default(now())
+  unreadCount      Int      @default(0)
+  online           Boolean  @default(false)
+  previousBookings Int      @default(0)
+  
+  messages         Message[]
+}
+
+model Message {
+  id        String   @id
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  
+  text      String
+  sender    String
+  timestamp DateTime @default(now())
+  platform  String?
+  status    String?
+  
+  // JSON field for attachment { name, type, size }
+  attachment String?
+}
+
+model Transaction {
+  id          String   @id
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  date        DateTime
+  property    String?
+  category    String?
+  subCategory String?
+  description String?
+  amount      Float
+  currency    String
+  type        String
+}
+
+model InventoryCategory {
+  id       String   @id
+  tenantId String
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  name     String
+  
+  items    InventoryItem[]
+}
+
+model InventoryItem {
+  id         String            @id
+  categoryId String
+  category   InventoryCategory @relation(fields: [categoryId], references: [id])
+  
+  name       String
+  quantity   Int
+}
+
+model ChannelMapping {
+  id          String  @id
+  unitId      String
+  unit        Unit    @relation(fields: [unitId], references: [id])
+  
+  unitName    String?
+  groupName   String?
+  airbnbId    String?
+  bookingId   String?
+  markup      Float @default(0)
+  isMapped    Boolean @default(false)
+  status      String
+}
+
+model IcalConnection {
+  id        String   @id
+  unitId    String
+  unit      Unit     @relation(fields: [unitId], references: [id])
+  
+  unitName  String?
+  importUrl String?
+  exportUrl String?
+  lastSync  String? // Storing as string "Never" or Date ISO
+}

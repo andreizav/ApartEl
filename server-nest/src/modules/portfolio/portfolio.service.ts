@@ -1,34 +1,95 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { StoreService } from '../../shared/store.service';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class PortfolioService {
-    constructor(private storeService: StoreService) { }
+    constructor(private prisma: PrismaService) { }
 
-    findAll(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.portfolio;
+    async findAll(tenantId: string) {
+        // Get all portfolio groups for this tenant with their units
+        const groups = await this.prisma.portfolioGroup.findMany({
+            where: { tenantId },
+            include: { units: true }
+        });
+        return groups;
     }
 
-    update(tenantId: string, portfolio: any[]) {
+    async update(tenantId: string, portfolio: any[]) {
         if (!Array.isArray(portfolio)) throw new BadRequestException('portfolio must be an array');
-        const data = this.storeService.getTenantData(tenantId);
-        data.portfolio = portfolio;
-        this.storeService.save();
-        return data.portfolio;
+
+        // Delete existing groups and units for this tenant
+        const existingGroups = await this.prisma.portfolioGroup.findMany({
+            where: { tenantId },
+            select: { id: true }
+        });
+        const groupIds = existingGroups.map(g => g.id);
+
+        // Delete units first (foreign key constraint)
+        await this.prisma.unit.deleteMany({
+            where: { groupId: { in: groupIds } }
+        });
+        await this.prisma.portfolioGroup.deleteMany({
+            where: { tenantId }
+        });
+
+        // Create new groups with units
+        for (const group of portfolio) {
+            await this.prisma.portfolioGroup.create({
+                data: {
+                    id: group.id,
+                    tenantId,
+                    name: group.name,
+                    expanded: group.expanded ?? true,
+                    isMerge: group.isMerge ?? false,
+                    units: {
+                        create: (group.units || []).map((u: any) => ({
+                            id: u.id,
+                            name: u.name,
+                            internalName: u.internalName,
+                            officialAddress: u.officialAddress,
+                            basePrice: u.basePrice,
+                            cleaningFee: u.cleaningFee,
+                            wifiSsid: u.wifiSsid,
+                            wifiPassword: u.wifiPassword,
+                            accessCodes: u.accessCodes,
+                            status: u.status ?? 'Active',
+                            assignedCleanerId: u.assignedCleanerId
+                        }))
+                    }
+                }
+            });
+        }
+
+        return this.findAll(tenantId);
     }
 
-    removeUnit(tenantId: string, unitId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        data.portfolio = data.portfolio
-            .map((g: any) => ({ ...g, units: g.units.filter((u: any) => u.id !== unitId) }))
-            .filter((g: any) => g.units.length > 0 || !g.isMerge);
+    async removeUnit(tenantId: string, unitId: string) {
+        // Verify the unit belongs to this tenant
+        const unit = await this.prisma.unit.findUnique({
+            where: { id: unitId },
+            include: { group: true }
+        });
+        if (!unit || unit.group.tenantId !== tenantId) {
+            throw new NotFoundException('Unit not found');
+        }
 
-        data.bookings = data.bookings.filter((b: any) => b.unitId !== unitId);
-        data.channelMappings = data.channelMappings.filter((m: any) => m.unitId !== unitId);
-        data.icalConnections = data.icalConnections.filter((i: any) => i.unitId !== unitId);
+        // Delete related records first
+        await this.prisma.booking.deleteMany({ where: { unitId } });
+        await this.prisma.channelMapping.deleteMany({ where: { unitId } });
+        await this.prisma.icalConnection.deleteMany({ where: { unitId } });
 
-        this.storeService.save();
+        // Delete the unit
+        await this.prisma.unit.delete({ where: { id: unitId } });
+
+        // Delete empty merge groups
+        const group = await this.prisma.portfolioGroup.findUnique({
+            where: { id: unit.groupId },
+            include: { units: true }
+        });
+        if (group && group.isMerge && group.units.length === 0) {
+            await this.prisma.portfolioGroup.delete({ where: { id: group.id } });
+        }
+
         return { ok: true };
     }
 }

@@ -41,3 +41,8 @@ server-nest/data.json
 
 # Angular
 .angular/
+
+# Prisma
+server-nest/prisma/*.db
+server-nest/prisma/*.db-journal
+server-nest/prisma/migrations/

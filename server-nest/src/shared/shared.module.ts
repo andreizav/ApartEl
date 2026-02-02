@@ -1,10 +1,10 @@
 import { Module, Global } from '@nestjs/common';
-import { StoreService } from './store.service';
+import { PrismaService } from './prisma.service';
 import { TelegramService } from './telegram.service';
 
 @Global()
 @Module({
-    providers: [StoreService, TelegramService],
-    exports: [StoreService, TelegramService],
+    providers: [PrismaService, TelegramService],
+    exports: [PrismaService, TelegramService],
 })
 export class SharedModule { }

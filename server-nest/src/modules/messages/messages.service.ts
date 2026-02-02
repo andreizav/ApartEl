@@ -1,64 +1,119 @@
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { StoreService } from '../../shared/store.service';
+import { BadRequestException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { PrismaService } from '../../shared/prisma.service';
 import { TelegramService } from '../../shared/telegram.service';
 
 @Injectable()
 export class MessagesService {
     constructor(
-        private storeService: StoreService,
+        private prisma: PrismaService,
         private telegramService: TelegramService
     ) { }
+
+    /**
+     * Save a message locally without sending to external platform.
+     * Used for simulator/local chat functionality.
+     */
+    async saveLocalMessage(tenantId: string, clientPhone: string, text: string, sender: string, platform?: string) {
+        if (!clientPhone || !text) {
+            throw new BadRequestException('Client phone and text are required');
+        }
+
+        // Find client by phone number
+        const client = await this.prisma.client.findFirst({
+            where: { tenantId, phoneNumber: clientPhone }
+        });
+
+        if (!client) {
+            throw new NotFoundException('Client not found');
+        }
+
+        const msgId = `msg-${sender}-${Date.now()}`;
+
+        await this.prisma.message.create({
+            data: {
+                id: msgId,
+                clientId: client.id,
+                text: text,
+                sender: sender, // 'bot', 'client', 'agent'
+                timestamp: new Date(),
+                platform: platform || client.platform || 'whatsapp',
+                status: 'sent'
+            }
+        });
+
+        await this.prisma.client.update({
+            where: { id: client.id },
+            data: { lastActive: new Date() }
+        });
+
+        return { success: true, messageId: msgId };
+    }
 
     async sendMessage(tenantId: string, recipientId: string, text: string, platform: string) {
         if (!recipientId || !text) {
             throw new BadRequestException('Recipient and text are required');
         }
 
-        const data = this.storeService.getTenantData(tenantId);
-
         if (platform === 'telegram') {
-            const token = data.appSettings.tgBotToken;
+            const tenant = await this.prisma.tenant.findUnique({
+                where: { id: tenantId }
+            });
+            const token = tenant?.tgBotToken;
             if (!token) throw new BadRequestException('Telegram bot not configured');
 
-            let client = data.clients.find((c: any) => c.platformId === recipientId || c.phoneNumber === recipientId || `tg-${c.platformId}` === recipientId);
-            if (!client) {
-                client = data.clients.find((c: any) => c.phoneNumber === recipientId);
-            }
+            // Find client by platformId or phoneNumber
+            let client = await this.prisma.client.findFirst({
+                where: {
+                    tenantId,
+                    OR: [
+                        { platformId: recipientId },
+                        { phoneNumber: recipientId },
+                        { platformId: recipientId.replace('tg-', '') }
+                    ]
+                }
+            });
 
             const msgId = `msg-agent-${Date.now()}`;
-            const newMessage: any = {
-                id: msgId,
-                text: text,
-                sender: 'agent',
-                timestamp: new Date().toISOString(),
-                platform: 'telegram',
-                status: 'sending'
-            };
 
+            // Create message in database if client exists
             if (client) {
-                client.messages.push(newMessage);
-                client.lastActive = newMessage.timestamp;
-            }
+                await this.prisma.message.create({
+                    data: {
+                        id: msgId,
+                        clientId: client.id,
+                        text: text,
+                        sender: 'agent',
+                        timestamp: new Date(),
+                        platform: 'telegram',
+                        status: 'sending'
+                    }
+                });
 
-            this.storeService.save();
+                await this.prisma.client.update({
+                    where: { id: client.id },
+                    data: { lastActive: new Date() }
+                });
+            }
 
             try {
                 await this.telegramService.sendMessage(token, recipientId, text);
 
                 if (client) {
-                    const msg = client.messages.find((m: any) => m.id === msgId);
-                    if (msg) msg.status = 'sent';
+                    await this.prisma.message.update({
+                        where: { id: msgId },
+                        data: { status: 'sent' }
+                    });
                 }
-                this.storeService.save();
                 return { success: true };
 
             } catch (err: any) {
                 console.error('Message Send Failed:', err.message);
                 if (client) {
-                    const msg = client.messages.find((m: any) => m.id === msgId);
-                    if (msg) msg.status = 'failed';
+                    await this.prisma.message.update({
+                        where: { id: msgId },
+                        data: { status: 'failed' }
+                    });
                 }
-                this.storeService.save();
                 throw new ServiceUnavailableException({ success: false, error: err.message, saved: true });
             }
         }
@@ -71,73 +126,71 @@ export class MessagesService {
             throw new BadRequestException('Recipient and file are required');
         }
 
-        const data = this.storeService.getTenantData(tenantId);
-
         if (platform === 'telegram') {
-            const token = data.appSettings.tgBotToken;
+            const tenant = await this.prisma.tenant.findUnique({
+                where: { id: tenantId }
+            });
+            const token = tenant?.tgBotToken;
             if (!token) throw new BadRequestException('Telegram bot not configured');
 
-            let client = data.clients.find((c: any) => c.platformId === recipientId || c.phoneNumber === recipientId || `tg-${c.platformId}` === recipientId);
-            if (!client) {
-                client = data.clients.find((c: any) => c.phoneNumber === recipientId);
-            }
+            // Find client by platformId or phoneNumber
+            let client = await this.prisma.client.findFirst({
+                where: {
+                    tenantId,
+                    OR: [
+                        { platformId: recipientId },
+                        { phoneNumber: recipientId },
+                        { platformId: recipientId.replace('tg-', '') }
+                    ]
+                }
+            });
 
             const msgId = `msg-agent-${Date.now()}`;
-            const newMessage: any = {
-                id: msgId,
-                text: `[File] ${file.originalname}`,
-                sender: 'agent',
-                timestamp: new Date().toISOString(),
-                platform: 'telegram',
-                status: 'sending',
-                attachment: {
-                    name: file.originalname,
-                    type: file.mimetype,
-                    size: file.size
-                }
+            const attachment = {
+                name: file.originalname,
+                type: file.mimetype,
+                size: file.size
             };
 
             if (client) {
-                client.messages.push(newMessage);
-                client.lastActive = newMessage.timestamp;
-                this.storeService.save();
+                await this.prisma.message.create({
+                    data: {
+                        id: msgId,
+                        clientId: client.id,
+                        text: `[File] ${file.originalname}`,
+                        sender: 'agent',
+                        timestamp: new Date(),
+                        platform: 'telegram',
+                        status: 'sending',
+                        attachment: JSON.stringify(attachment)
+                    }
+                });
+
+                await this.prisma.client.update({
+                    where: { id: client.id },
+                    data: { lastActive: new Date() }
+                });
             }
 
             try {
-                // Need to expose sendFile in TelegramService first or implement it here?
-                // Since it's in shared service now but I only migrated sendMessage and syncUpdates.
-                // I need to add sendFile to TelegramService.
-
-                // Wait, I missed implementation of sendFile in TelegramService step. 
-                // I will implement it inline here for now or update TelegramService. 
-                // Better to update TelegramService. But I cannot edit file and write this at same time properly?
-                // I will assume I update TelegramService in next step or now. 
-                // Actually I'll use a hack to call it via 'any' or add it.
-                // Let's implement it here directly using the same logic or update TelegramService.
-                // I'll update TelegramService first in parallel or just before this.
-
-                // Rethink: I should update TelegramService to include sendFile. 
-                // I will push this Service implementation assuming TelegramService has sendFile or I add it now.
-
-                // I'll skip the call for a second and add logic to TelegramService in a separate tool call to be clean.
-                // But for now let's assume valid TelegramService.
-
                 await (this.telegramService as any).sendFile(token, recipientId, file.buffer, file.originalname, file.mimetype, caption);
 
                 if (client) {
-                    const msg = client.messages.find((m: any) => m.id === msgId);
-                    if (msg) msg.status = 'sent';
+                    await this.prisma.message.update({
+                        where: { id: msgId },
+                        data: { status: 'sent' }
+                    });
                 }
-                this.storeService.save();
                 return { success: true };
 
             } catch (err: any) {
                 console.error('File Send Failed:', err.message);
                 if (client) {
-                    const msg = client.messages.find((m: any) => m.id === msgId);
-                    if (msg) msg.status = 'failed';
+                    await this.prisma.message.update({
+                        where: { id: msgId },
+                        data: { status: 'failed' }
+                    });
                 }
-                this.storeService.save();
                 throw new ServiceUnavailableException({ success: false, error: err.message, saved: true });
             }
         }

@@ -5,12 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { PortfolioService } from '../shared/portfolio.service';
 
 @Component({
-  selector: 'app-superbase',
+  selector: 'app-db-simulator',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './superbase.component.html',
+  templateUrl: './db-simulator.component.html',
 })
-export class SuperbaseComponent {
+export class DbSimulatorComponent {
   private portfolioService = inject(PortfolioService);
 
   // Module State
@@ -27,17 +27,18 @@ export class SuperbaseComponent {
   activeAuthSection = signal<'users' | 'policies'>('users');
   searchUserQuery = signal('');
 
-  // Tables Mapping (Multi-Tenant Architecture)
+  // Tables Mapping (Prisma Schema)
   tables = [
-    { name: 'tenants', label: 'public.tenants', icon: 'domain' },
-    { name: 'users', label: 'public.users', icon: 'shield_person' },
-    { name: 'properties', label: 'public.properties', icon: 'apartment' },
-    { name: 'bookings', label: 'public.bookings', icon: 'book_online' },
-    { name: 'transactions', label: 'public.transactions', icon: 'payments' },
-    { name: 'clients', label: 'public.clients', icon: 'groups' },
-    { name: 'inventory', label: 'public.inventory_items', icon: 'inventory_2' },
-    { name: 'channels', label: 'public.channel_mappings', icon: 'hub' },
-    { name: 'settings', label: 'public.app_settings', icon: 'settings' },
+    { name: 'tenants', label: 'Prisma.Tenant', icon: 'domain' },
+    { name: 'staff', label: 'Prisma.Staff', icon: 'shield_person' },
+    { name: 'portfolio', label: 'Prisma.Unit', icon: 'apartment' },
+    { name: 'bookings', label: 'Prisma.Booking', icon: 'book_online' },
+    { name: 'transactions', label: 'Prisma.Transaction', icon: 'payments' },
+    { name: 'clients', label: 'Prisma.Client', icon: 'groups' },
+    { name: 'messages', label: 'Prisma.Message', icon: 'forum' },
+    { name: 'inventory', label: 'Prisma.InventoryItem', icon: 'inventory_2' },
+    { name: 'channels', label: 'Prisma.ChannelMapping', icon: 'hub' },
+    { name: 'settings', label: 'Prisma.Tenant (Settings)', icon: 'settings' },
   ];
 
   // Computed Table Data
@@ -46,36 +47,50 @@ export class SuperbaseComponent {
     switch (this.activeTable()) {
       case 'tenants':
         const t = this.portfolioService.tenant();
-        return [{ id: t.id, name: t.name, plan: t.plan, status: t.status, max_units: t.maxUnits, created_at: '2023-01-01T00:00:00Z' }];
-      case 'bookings': return this.portfolioService.bookings().map(b => ({ ...b, tenant_id: tenantId }));
+        return [{ id: t.id, name: t.name, plan: t.plan, status: t.status, maxUnits: t.maxUnits }];
+      case 'bookings': return this.portfolioService.bookings().map(b => ({ ...b, tenantId: tenantId }));
       case 'staff':
-      case 'users':
         return this.portfolioService.staff().map(s => ({
           id: s.id,
-          tenant_id: tenantId,
+          tenantId: tenantId,
+          name: s.name,
           email: s.email,
-          role: s.role === 'Manager' ? 'Owner' : s.role,
-          telegram_id: Math.floor(Math.random() * 100000000),
-          created_at: new Date()
+          role: s.role,
+          status: s.status,
+          online: s.online,
+          lastActive: s.lastActive
         }));
-      case 'transactions': return this.portfolioService.transactions().map(t => ({ ...t, tenant_id: tenantId }));
-      case 'clients': return this.portfolioService.clients().map(c => ({ ...c, tenant_id: tenantId }));
-      case 'properties':
+      case 'transactions': return this.portfolioService.transactions().map(t => ({ ...t, tenantId: tenantId }));
+      case 'clients': return this.portfolioService.clients().map(c => ({
+        id: c.id,
+        tenantId: tenantId,
+        phoneNumber: c.phoneNumber,
+        name: c.name,
+        email: c.email,
+        platform: c.platform,
+        status: c.status
+      }));
+      case 'messages':
+        const allMsgs: any[] = [];
+        this.portfolioService.clients().forEach(c => {
+          c.messages.forEach(m => allMsgs.push({ ...m, clientId: c.id, clientPhone: c.phoneNumber }));
+        });
+        return allMsgs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      case 'portfolio':
         const flat: any[] = [];
         this.portfolioService.portfolio().forEach(g => {
-          g.units.forEach(u => flat.push({ ...u, group: g.name, tenant_id: tenantId }));
+          g.units.forEach(u => flat.push({ ...u, groupId: g.id, tenantId: tenantId }));
         });
         return flat;
       case 'inventory':
         const invItems: any[] = [];
         this.portfolioService.inventory().forEach(cat => {
-          cat.items.forEach(i => invItems.push({ id: i.id, category: cat.name, name: i.name, quantity: i.quantity, tenant_id: tenantId }));
+          cat.items.forEach(i => invItems.push({ id: i.id, categoryId: cat.id, name: i.name, quantity: i.quantity }));
         });
         return invItems;
-      case 'channels': return this.portfolioService.channelMappings().map(m => ({ ...m, tenant_id: tenantId }));
+      case 'channels': return this.portfolioService.channelMappings().map(m => ({ ...m, unitId: m.unitId }));
       case 'settings':
-        // Single row table
-        return [{ ...this.portfolioService.appSettings(), tenant_id: tenantId }];
+        return [{ ...this.portfolioService.appSettings(), tenantId: tenantId }];
       default: return [];
     }
   });

@@ -358,21 +358,21 @@ export class PortfolioService {
     const today = new Date().toISOString().split('T')[0];
     return `
 BEGIN;
-TRUNCATE TABLE public.bookings CASCADE;
-TRUNCATE TABLE public.clients CASCADE;
-TRUNCATE TABLE public.transactions CASCADE;
-TRUNCATE TABLE public.properties CASCADE;
-TRUNCATE TABLE public.inventory_items CASCADE;
-TRUNCATE TABLE public.channel_mappings CASCADE;
-INSERT INTO public.tenants (id, name, plan) VALUES ('t-demo', 'Demo Hospitality', 'Pro');
-INSERT INTO auth.users (email, role) VALUES ('alice@demo.com', 'Manager'), ('bob@demo.com', 'Cleaner');
-INSERT INTO public.properties (id, name, base_price) VALUES ('u1', 'Loft 101', 150), ('u2', 'Loft 102', 160), ('u3', 'Penthouse', 350);
-INSERT INTO public.bookings (unit_id, guest, status, amount) VALUES ('u1', 'John Doe', 'confirmed', 450), ('u2', 'Current Guest', 'confirmed', 480);
-INSERT INTO public.transactions (date, amount, type) VALUES ('${today}', 450, 'income'), ('${today}', 50, 'expense');
-INSERT INTO public.inventory_categories (name) VALUES ('Toiletries'), ('Linens');
-INSERT INTO public.inventory_items (name, qty) VALUES ('Shampoo', 45), ('Soap', 30), ('Towels', 20);
-UPDATE public.app_settings SET wa_status = 'connected', auto_draft = false;
-INSERT INTO public.ota_configs (channel, enabled) VALUES ('airbnb', true), ('booking', true);
+-- Prisma Models mapping
+TRUNCATE TABLE Booking CASCADE;
+TRUNCATE TABLE Client CASCADE;
+TRUNCATE TABLE Transaction CASCADE;
+TRUNCATE TABLE Unit CASCADE;
+TRUNCATE TABLE InventoryItem CASCADE;
+TRUNCATE TABLE ChannelMapping CASCADE;
+INSERT INTO Tenant (id, name, plan) VALUES ('t-demo', 'Demo Hospitality', 'Pro');
+INSERT INTO Staff (email, role) VALUES ('alice@demo.com', 'Manager'), ('bob@demo.com', 'Cleaner');
+INSERT INTO Unit (id, name, basePrice) VALUES ('u1', 'Loft 101', 150), ('u2', 'Loft 102', 160), ('u3', 'Penthouse', 350);
+INSERT INTO Booking (unitId, guestName, status, price) VALUES ('u1', 'John Doe', 'confirmed', 450), ('u2', 'Current Guest', 'confirmed', 480);
+INSERT INTO Transaction (date, amount, type) VALUES ('${today}', 450, 'income'), ('${today}', 50, 'expense');
+INSERT INTO InventoryCategory (name) VALUES ('Toiletries'), ('Linens');
+INSERT INTO InventoryItem (name, quantity) VALUES ('Shampoo', 45), ('Soap', 30), ('Towels', 20);
+UPDATE Tenant SET waStatus = 'connected' WHERE id = 't-demo';
 COMMIT;
 `.trim();
   }

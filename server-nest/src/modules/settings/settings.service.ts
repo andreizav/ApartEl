@@ -1,25 +1,61 @@
-import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { StoreService } from '../../shared/store.service';
+import { BadRequestException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { PrismaService } from '../../shared/prisma.service';
 import { TelegramService } from '../../shared/telegram.service';
 
 @Injectable()
 export class SettingsService {
     constructor(
-        private storeService: StoreService,
+        private prisma: PrismaService,
         private telegramService: TelegramService
     ) { }
 
-    getSettings(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.appSettings;
+    async getSettings(tenantId: string) {
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) throw new NotFoundException('Tenant not found');
+
+        return {
+            waStatus: tenant.waStatus ?? 'disconnected',
+            autoDraft: tenant.autoDraft ?? true,
+            tgBotToken: tenant.tgBotToken ?? '',
+            tgAdminGroupId: tenant.tgAdminGroupId ?? '',
+            aiApiKey: tenant.aiApiKey ?? '',
+            aiSystemPrompt: tenant.aiSystemPrompt ?? 'You are a helpful property manager.',
+            ragSensitivity: tenant.ragSensitivity ?? 0.7
+        };
     }
 
-    updateSettings(tenantId: string, settings: any) {
+    async updateSettings(tenantId: string, settings: any) {
         if (typeof settings !== 'object') throw new BadRequestException('appSettings must be an object');
-        const data = this.storeService.getTenantData(tenantId);
-        data.appSettings = { ...data.appSettings, ...settings };
-        this.storeService.save();
-        return data.appSettings;
+
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        if (!tenant) throw new NotFoundException('Tenant not found');
+
+        const updated = await this.prisma.tenant.update({
+            where: { id: tenantId },
+            data: {
+                ...(settings.waStatus !== undefined && { waStatus: settings.waStatus }),
+                ...(settings.autoDraft !== undefined && { autoDraft: settings.autoDraft }),
+                ...(settings.tgBotToken !== undefined && { tgBotToken: settings.tgBotToken }),
+                ...(settings.tgAdminGroupId !== undefined && { tgAdminGroupId: settings.tgAdminGroupId }),
+                ...(settings.aiApiKey !== undefined && { aiApiKey: settings.aiApiKey }),
+                ...(settings.aiSystemPrompt !== undefined && { aiSystemPrompt: settings.aiSystemPrompt }),
+                ...(settings.ragSensitivity !== undefined && { ragSensitivity: settings.ragSensitivity }),
+            }
+        });
+
+        return {
+            waStatus: updated.waStatus,
+            autoDraft: updated.autoDraft,
+            tgBotToken: updated.tgBotToken,
+            tgAdminGroupId: updated.tgAdminGroupId,
+            aiApiKey: updated.aiApiKey,
+            aiSystemPrompt: updated.aiSystemPrompt,
+            ragSensitivity: updated.ragSensitivity
+        };
     }
 
     async testTelegram(token: string, chatId: string) {
@@ -40,8 +76,8 @@ export class SettingsService {
     }
 
     async syncTelegram(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        const token = data.appSettings.tgBotToken;
+        const settings = await this.getSettings(tenantId);
+        const token = settings.tgBotToken;
 
         if (!token) {
             throw new BadRequestException('Bot token not configured.');

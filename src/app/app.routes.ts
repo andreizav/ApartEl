@@ -15,7 +15,7 @@ export const routes: Routes = [
       { path: 'clients', loadComponent: () => import('./clients/clients.component').then(m => m.ClientsComponent) },
       { path: 'communications', loadComponent: () => import('./communications/communications.component').then(m => m.CommunicationsComponent) },
       { path: 'channel-simulator', loadComponent: () => import('./channel-simulator/channel-simulator.component').then(m => m.ChannelSimulatorComponent) },
-      { path: 'superbase', loadComponent: () => import('./superbase/superbase.component').then(m => m.SuperbaseComponent) },
+      { path: 'db-simulator', loadComponent: () => import('./db-simulator/db-simulator.component').then(m => m.DbSimulatorComponent) },
       { path: 'inventory', loadComponent: () => import('./inventory/inventory.component').then(m => m.InventoryComponent) },
       { path: 'pnl', loadComponent: () => import('./pnl/pnl.component').then(m => m.PnLComponent) },
       { path: 'channel-manager', loadComponent: () => import('./channel-manager/channel-manager.component').then(m => m.ChannelManagerComponent) },

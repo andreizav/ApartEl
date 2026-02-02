@@ -267,7 +267,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
       if (c.phoneNumber === client.phoneNumber) {
         return {
           ...c,
-          messages: [...c.messages, linkMsg],
+          messages: [...(c.messages || []), linkMsg],
           previousBookings: c.previousBookings + 1,
           lastActive: new Date()
         };
@@ -342,7 +342,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
         if (c.phoneNumber === client.phoneNumber) {
           return {
             ...c,
-            messages: [...c.messages, confirmMsg],
+            messages: [...(c.messages || []), confirmMsg],
             previousBookings: c.previousBookings + 1,
             lastActive: new Date()
           };
@@ -400,6 +400,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
     if (!data.name || !data.phoneNumber) return;
 
     const newClient: Client = {
+      id: data.id || `c-${Date.now()}`,
       phoneNumber: data.phoneNumber,
       name: data.name,
       email: data.email || '',
@@ -501,7 +502,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
     if (newMessages.length > 0) {
       this.clients.update(list => list.map(c => {
         if (c.phoneNumber === phoneNumber) {
-          return { ...c, messages: [...c.messages, ...newMessages] };
+          return { ...c, messages: [...(c.messages || []), ...newMessages] };
         }
         return c;
       }));
@@ -545,7 +546,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
       if (c.phoneNumber === client.phoneNumber) {
         return {
           ...c,
-          messages: [...c.messages, newMsg],
+          messages: [...(c.messages || []), newMsg],
           lastActive: new Date()
         };
       }
@@ -614,7 +615,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
       if (c.phoneNumber === client.phoneNumber) {
         return {
           ...c,
-          messages: [...c.messages, newMsg],
+          messages: [...(c.messages || []), newMsg],
           lastActive: new Date()
         };
       }

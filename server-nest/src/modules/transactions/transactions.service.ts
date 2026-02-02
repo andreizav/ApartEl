@@ -1,31 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { StoreService } from '../../shared/store.service';
+import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class TransactionsService {
-    constructor(private storeService: StoreService) { }
+    constructor(private prisma: PrismaService) { }
 
-    findAll(tenantId: string) {
-        const data = this.storeService.getTenantData(tenantId);
-        return data.transactions;
+    async findAll(tenantId: string) {
+        return this.prisma.transaction.findMany({
+            where: { tenantId },
+            orderBy: { date: 'desc' }
+        });
     }
 
-    create(tenantId: string, tx: any) {
-        const data = this.storeService.getTenantData(tenantId);
-        const newTx = {
-            id: tx.id || `tx-${Date.now()}`,
-            tenantId: tenantId,
-            date: tx.date,
-            property: tx.property ?? '',
-            category: tx.category ?? '',
-            subCategory: tx.subCategory ?? '',
-            description: tx.description ?? '',
-            amount: tx.amount ?? 0,
-            currency: tx.currency ?? 'USD',
-            type: tx.type ?? 'expense',
-        };
-        data.transactions.unshift(newTx);
-        this.storeService.save();
-        return newTx;
+    async create(tenantId: string, tx: any) {
+        return this.prisma.transaction.create({
+            data: {
+                id: tx.id || `tx-${Date.now()}`,
+                tenantId,
+                date: new Date(tx.date),
+                property: tx.property ?? '',
+                category: tx.category ?? '',
+                subCategory: tx.subCategory ?? '',
+                description: tx.description ?? '',
+                amount: tx.amount ?? 0,
+                currency: tx.currency ?? 'USD',
+                type: tx.type ?? 'expense',
+            }
+        });
     }
 }

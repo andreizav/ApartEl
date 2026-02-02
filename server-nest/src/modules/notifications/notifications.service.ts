@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { ConfigService } from '@nestjs/config';
 import { TelegramService } from '../../shared/telegram.service';
-import { StoreService } from '../../shared/store.service';
+import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
 export class NotificationsService {
     constructor(
         private configService: ConfigService,
         private telegramService: TelegramService,
-        private storeService: StoreService,
+        private prisma: PrismaService,
     ) { }
 
     @OnEvent('booking.created')
@@ -31,8 +31,10 @@ export class NotificationsService {
             return;
         }
 
-        const data = this.storeService.getTenantData(tenantId);
-        const adminGroupId = data.appSettings.tgAdminGroupId;
+        const tenant = await this.prisma.tenant.findUnique({
+            where: { id: tenantId }
+        });
+        const adminGroupId = tenant?.tgAdminGroupId;
 
         if (!adminGroupId) {
             console.warn(`[Notifications] No Admin Group ID for tenant ${tenantId}`);

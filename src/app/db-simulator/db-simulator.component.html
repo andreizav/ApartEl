@@ -5,36 +5,36 @@
     <div class="w-16 border-r border-[#333] bg-[#141414] flex flex-col items-center py-4 gap-4 z-20">
         <!-- Logo/Brand -->
         <div
-            class="w-10 h-10 bg-[#3ECF8E] rounded-lg flex items-center justify-center text-black shadow-lg shadow-[#3ECF8E]/20 mb-2">
-            <span class="material-symbols-outlined font-bold">bolt</span>
+            class="w-10 h-10 bg-[#3178c6] rounded-lg flex items-center justify-center text-white shadow-lg shadow-[#3178c6]/20 mb-2">
+            <span class="material-symbols-outlined font-bold">database</span>
         </div>
 
         <!-- Nav Items -->
         <button (click)="activeModule.set('database')"
             class="w-10 h-10 rounded-lg flex items-center justify-center transition-colors relative group"
-            [class.bg-[#333]]="activeModule() === 'database'" [class.text-[#3ECF8E]]="activeModule() === 'database'"
+            [class.bg-[#333]]="activeModule() === 'database'" [class.text-[#3178c6]]="activeModule() === 'database'"
             [class.text-gray-500]="activeModule() !== 'database'"
             [class.hover:text-gray-300]="activeModule() !== 'database'">
             <span class="material-symbols-outlined">database</span>
             <div
                 class="absolute left-14 bg-black px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-[#333]">
-                Database</div>
+                Database (Prisma)</div>
         </button>
 
         <button (click)="activeModule.set('auth')"
             class="w-10 h-10 rounded-lg flex items-center justify-center transition-colors relative group"
-            [class.bg-[#333]]="activeModule() === 'auth'" [class.text-[#3ECF8E]]="activeModule() === 'auth'"
+            [class.bg-[#333]]="activeModule() === 'auth'" [class.text-[#3178c6]]="activeModule() === 'auth'"
             [class.text-gray-500]="activeModule() !== 'auth'" [class.hover:text-gray-300]="activeModule() !== 'auth'">
             <span class="material-symbols-outlined">lock_person</span>
             <div
                 class="absolute left-14 bg-black px-2 py-1 rounded text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-[#333]">
-                Authentication</div>
+                Authentication (App)</div>
         </button>
 
         <div class="flex-1"></div>
 
         <button (click)="saveToDisk()"
-            class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-[#3ECF8E] hover:bg-[#333] transition-colors relative group"
+            class="w-10 h-10 rounded-lg flex items-center justify-center text-gray-500 hover:text-[#3178c6] hover:bg-[#333] transition-colors relative group"
             title="Commit & Save">
             <span class="material-symbols-outlined">save</span>
             <div
@@ -55,14 +55,14 @@
         </div>
 
         <div class="flex-1 overflow-y-auto py-2">
-            <div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Public Schema</div>
+            <div class="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Prisma Models</div>
             @for (table of tables; track table.name) {
             <button (click)="setActiveTable(table.name)"
                 class="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#222] transition-colors border-l-2"
-                [class.border-[#3ECF8E]]="activeTable() === table.name"
+                [class.border-[#3178c6]]="activeTable() === table.name"
                 [class.bg-[#1a1a1a]]="activeTable() === table.name"
                 [class.border-transparent]="activeTable() !== table.name"
-                [class.text-[#3ECF8E]]="activeTable() === table.name"
+                [class.text-[#3178c6]]="activeTable() === table.name"
                 [class.text-gray-400]="activeTable() !== table.name">
                 <span class="material-symbols-outlined text-[16px]">{{ table.icon }}</span>
                 <span class="text-xs font-medium">{{ table.label }}</span>
@@ -94,7 +94,7 @@
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-1 mr-4">
                     <button (click)="createMockData()"
-                        class="px-3 py-1.5 text-xs font-bold rounded-md hover:bg-[#222] text-[#3ECF8E] transition-colors flex items-center gap-2 border border-transparent hover:border-[#333]"
+                        class="px-3 py-1.5 text-xs font-bold rounded-md hover:bg-[#222] text-[#3178c6] transition-colors flex items-center gap-2 border border-transparent hover:border-[#333]"
                         title="Reset to Demo Data">
                         <span class="material-symbols-outlined text-[16px]">restart_alt</span>
                         Reset
@@ -108,8 +108,8 @@
                 </div>
 
                 <div class="flex items-center gap-4 text-xs text-gray-500 border-l border-[#333] pl-4">
-                    <span>Role: <strong class="text-white">service_role</strong></span>
-                    <span>Region: <strong class="text-white">aws-us-east-1</strong></span>
+                    <span>Driver: <strong class="text-white">SQLite</strong></span>
+                    <span>ORM: <strong class="text-white">Prisma</strong></span>
                 </div>
             </div>
         </div>
@@ -129,7 +129,7 @@
                                 <div class="flex items-center gap-2">
                                     @if(head === 'id') { <span class="material-symbols-outlined text-[10px]">key</span>
                                     }
-                                    @if(head === 'tenant_id') { <span
+                                    @if(head === 'tenantId') { <span
                                         class="material-symbols-outlined text-[10px] text-yellow-500">vpn_key</span> }
                                     {{ head }}
                                 </div>
@@ -166,11 +166,11 @@
             <div class="flex-1 flex flex-col bg-[#141414]">
                 <div class="h-1/2 border-b border-[#333] flex flex-col">
                     <textarea [(ngModel)]="sqlQuery"
-                        class="flex-1 bg-[#141414] text-[#3ECF8E] p-4 focus:outline-none resize-none font-mono text-sm leading-relaxed border-none focus:ring-0"
+                        class="flex-1 bg-[#141414] text-[#3178c6] p-4 focus:outline-none resize-none font-mono text-sm leading-relaxed border-none focus:ring-0"
                         placeholder="Enter SQL query..." spellcheck="false"></textarea>
                     <div class="px-4 py-2 bg-[#111] flex justify-end border-t border-[#333]">
                         <button (click)="runSql()"
-                            class="px-4 py-1.5 bg-[#3ECF8E] hover:bg-[#34b27b] text-black text-xs font-bold rounded flex items-center gap-2 transition-colors">
+                            class="px-4 py-1.5 bg-[#3178c6] hover:bg-[#2c6cb3] text-white text-xs font-bold rounded flex items-center gap-2 transition-colors">
                             <span class="material-symbols-outlined text-[16px]">play_arrow</span>
                             Run
                         </button>
@@ -206,7 +206,8 @@
                     }
                     } @else {
                     <div class="text-gray-600 text-xs mt-4">Execute a query to see results. Try:
-                        <code>SELECT * FROM tenants</code></div>
+                        <code>SELECT * FROM Tenant</code>
+                    </div>
                     }
                 </div>
             </div>
@@ -231,20 +232,20 @@
         <div class="flex-1 py-2">
             <button (click)="activeAuthSection.set('users')"
                 class="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#222] transition-colors border-l-2"
-                [class.border-[#3ECF8E]]="activeAuthSection() === 'users'"
+                [class.border-[#3178c6]]="activeAuthSection() === 'users'"
                 [class.bg-[#1a1a1a]]="activeAuthSection() === 'users'"
                 [class.border-transparent]="activeAuthSection() !== 'users'"
-                [class.text-[#3ECF8E]]="activeAuthSection() === 'users'"
+                [class.text-[#3178c6]]="activeAuthSection() === 'users'"
                 [class.text-gray-400]="activeAuthSection() !== 'users'">
                 <span class="material-symbols-outlined text-[16px]">group</span>
                 <span class="text-xs font-medium">Users</span>
             </button>
             <button (click)="activeAuthSection.set('policies')"
                 class="w-full flex items-center gap-3 px-4 py-2 hover:bg-[#222] transition-colors border-l-2"
-                [class.border-[#3ECF8E]]="activeAuthSection() === 'policies'"
+                [class.border-[#3178c6]]="activeAuthSection() === 'policies'"
                 [class.bg-[#1a1a1a]]="activeAuthSection() === 'policies'"
                 [class.border-transparent]="activeAuthSection() !== 'policies'"
-                [class.text-[#3ECF8E]]="activeAuthSection() === 'policies'"
+                [class.text-[#3178c6]]="activeAuthSection() === 'policies'"
                 [class.text-gray-400]="activeAuthSection() !== 'policies'">
                 <span class="material-symbols-outlined text-[16px]">security</span>
                 <span class="text-xs font-medium">Policies</span>
@@ -264,10 +265,10 @@
                     <span class="material-symbols-outlined text-gray-500 text-[16px]">search</span>
                 </span>
                 <input type="text" [(ngModel)]="searchUserQuery" placeholder="Search by email or phone"
-                    class="bg-[#111] border border-[#333] rounded px-2 py-1 pl-8 text-xs text-white w-64 focus:ring-1 focus:ring-[#3ECF8E]">
+                    class="bg-[#111] border border-[#333] rounded px-2 py-1 pl-8 text-xs text-white w-64 focus:ring-1 focus:ring-[#3178c6]">
             </div>
             <button (click)="inviteUser()"
-                class="px-4 py-1.5 bg-[#3ECF8E] hover:bg-[#34b27b] text-black text-xs font-bold rounded flex items-center gap-2 transition-colors">
+                class="px-4 py-1.5 bg-[#3178c6] hover:bg-[#2c6cb3] text-white text-xs font-bold rounded flex items-center gap-2 transition-colors">
                 <span class="material-symbols-outlined text-[16px]">mail</span>
                 Invite User
             </button>
@@ -348,7 +349,7 @@
             <span class="material-symbols-outlined text-6xl mb-4 text-[#333]">policy</span>
             <h3 class="text-xl font-bold text-white mb-2">Row Level Security (RLS)</h3>
             <p class="text-sm max-w-md text-center">
-                Multi-Tenant isolation policies active. Data is strictly segregated by <code>tenant_id</code>.
+                Data segregation is enforced by the application layer and global Prisma filters.
             </p>
 
             <div class="mt-8 w-full max-w-2xl text-left bg-[#111] border border-[#333] rounded-lg overflow-hidden">

@@ -203,6 +203,13 @@ export class ApiService {
     );
   }
 
+  saveLocalMessage(clientPhone: string, text: string, sender: string, platform: string = 'whatsapp'): Observable<boolean> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/api/messages/save`, { clientPhone, text, sender, platform }).pipe(
+      map(res => res.success),
+      catchError(() => of(false))
+    );
+  }
+
   sendFile(recipientId: string, file: File, platform: string = 'telegram', caption: string = ''): Observable<boolean> {
     const formData = new FormData();
     formData.append('recipientId', recipientId);

@@ -15,6 +15,12 @@ export class MessagesController {
         return this.messagesService.sendMessage(tenantId, recipientId, text, platform);
     }
 
+    @Post('save')
+    saveLocalMessage(@TenantId() tenantId: string, @Body() body: any) {
+        const { clientPhone, text, sender, platform } = body;
+        return this.messagesService.saveLocalMessage(tenantId, clientPhone, text, sender, platform);
+    }
+
     @Post('send/attachment')
     @UseInterceptors(FileInterceptor('file'))
     sendAttachment(

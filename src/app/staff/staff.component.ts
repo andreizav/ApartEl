@@ -170,7 +170,7 @@ export class StaffComponent implements AfterViewChecked {
       if (s.id === staff.id) {
         return {
           ...s,
-          messages: [...s.messages, assignMsg],
+          messages: [...(s.messages || []), assignMsg],
           unreadCount: s.unreadCount + 1,
           lastActive: new Date()
         };
@@ -197,7 +197,7 @@ export class StaffComponent implements AfterViewChecked {
   }
 
   getLastMessage(staff: Staff): string {
-    if (staff.messages.length === 0) return 'No activity';
+    if (!staff.messages || staff.messages.length === 0) return 'No activity';
     const last = staff.messages[staff.messages.length - 1];
     return last.text;
   }
@@ -239,7 +239,7 @@ export class StaffComponent implements AfterViewChecked {
       if (s.id === staff.id) {
         return {
           ...s,
-          messages: [...s.messages, newMsg],
+          messages: [...(s.messages || []), newMsg],
           lastActive: new Date()
         };
       }
@@ -314,7 +314,7 @@ export class StaffComponent implements AfterViewChecked {
       if (s.id === staff.id) {
         return {
           ...s,
-          messages: [...s.messages, newMsg],
+          messages: [...(s.messages || []), newMsg],
           lastActive: new Date()
         };
       }
