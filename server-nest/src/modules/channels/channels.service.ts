@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { StoreService } from '../../shared/store.service';
 
 @Injectable()
@@ -78,5 +79,32 @@ export class ChannelsService {
         this.storeService.save();
 
         return { channelMappings: data.channelMappings, icalConnections: data.icalConnections };
+    }
+
+    @Cron('0 */15 * * * *')
+    handleCron() {
+        console.log('[Channels] Starting scheduled iCal sync...');
+        const state = this.storeService.getState();
+        if (!state || !state.dataByTenant) return;
+
+        let hasChanges = false;
+        Object.keys(state.dataByTenant).forEach(tenantId => {
+            const data = state.dataByTenant[tenantId];
+            const icalConnections = data.icalConnections || [];
+
+            icalConnections.forEach((conn: any) => {
+                if (conn.importUrl) {
+                    console.log(`[Channels] Syncing iCal for tenant ${tenantId}, unit ${conn.unitId} from ${conn.importUrl}`);
+                    // Mock sync: Just update timestamp
+                    conn.lastSync = new Date().toISOString();
+                    hasChanges = true;
+                }
+            });
+        });
+
+        if (hasChanges) {
+            this.storeService.save();
+            console.log('[Channels] Sync state saved.');
+        }
     }
 }

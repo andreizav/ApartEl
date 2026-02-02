@@ -22,7 +22,7 @@ ApartEl is a modern Property Management System (PMS) designed specifically for a
 - **Styling**: TailwindCSS
 - **Visualization**: D3.js (for charts and analytics)
 - **Data Handling**: RxJS, XLSX (Excel export/import)
-- **Backend**: Node.js (Express)
+- **Backend**: NestJS (TypeScript)
 - **Architecture**: Single Page Application (SPA) with server-side data persistence.
 
 ## 🏁 Getting Started
@@ -38,14 +38,14 @@ ApartEl is a modern Property Management System (PMS) designed specifically for a
     cd ApartEl
     ```
 
-2.  **Install Frontend Dependencies:**
+2.  **Install Application Dependencies:**
     ```bash
     npm install
     ```
 
 3.  **Install Backend Dependencies:**
     ```bash
-    cd server
+    cd server-nest
     npm install
     cd ..
     ```
@@ -61,13 +61,14 @@ The server handles data persistence (JSON file-based) and API endpoints.
 # From the project root
 npm run server
 ```
-*API runs at `http://localhost:4000`*
+*API runs at `http://localhost:3000`*
 
-**Note:** Ensure you have a `.env` file in the `server/` directory. You can copy `server/.env.example` to `server/.env`.
+**Note:** Ensure you have a `.env` file in the `server-nest/` directory.
 ```env
-PORT=4000
+PORT=3000
 JWT_SECRET=your_secret_key
 CORS_ORIGIN=http://localhost:3000
+TELEGRAM_BOT_TOKEN=your_token
 ```
 
 #### 2. Start the Frontend Application

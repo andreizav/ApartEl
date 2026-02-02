@@ -1,10 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { StoreService } from '../../shared/store.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 
 @Injectable()
 export class BookingsService {
-    constructor(private storeService: StoreService) { }
+    constructor(
+        private storeService: StoreService,
+        private eventEmitter: EventEmitter2,
+    ) { }
 
     findAll(tenantId: string) {
         const data = this.storeService.getTenantData(tenantId);
@@ -58,6 +62,8 @@ export class BookingsService {
 
         data.bookings.push(booking);
         this.storeService.save();
+
+        this.eventEmitter.emit('booking.created', { booking, tenantId });
 
         return { success: true, booking };
     }
