@@ -7,8 +7,8 @@
     "dev": "ng serve",
     "build": "ng build",
     "preview": "ng serve --configuration=production",
-    "server": "node server/index.js",
-    "server:dev": "node --watch server/index.js"
+    "server": "npm run start:dev --prefix server-nest",
+    "server:prod": "npm run start:prod --prefix server-nest"
   },
   "dependencies": {
     "@angular/build": "^21.1.0",
