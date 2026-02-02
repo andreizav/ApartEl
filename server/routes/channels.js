@@ -66,10 +66,11 @@ router.post('/sync', (req, res) => {
         : { id: `cm-${unit.id}`, unitId: unit.id, unitName: unit.name, groupName, airbnbId: '', bookingId: '', markup: 0, isMapped: false, status: 'Inactive' }
     );
     const existingIcal = currentIcals.find((i) => i.unitId === unit.id);
+    const API_URL = process.env.API_PUBLIC_URL || 'http://localhost:4000';
     updatedIcals.push(
       existingIcal
         ? { ...existingIcal, unitName: unit.name }
-        : { id: `ical-${unit.id}`, unitId: unit.id, unitName: unit.name, importUrl: '', exportUrl: `https://api.apartel.app/cal/${req.tenantId}/${unit.id}.ics`, lastSync: 'Never' }
+        : { id: `ical-${unit.id}`, unitId: unit.id, unitName: unit.name, importUrl: '', exportUrl: `${API_URL}/cal/${req.tenantId}/${unit.id}.ics`, lastSync: 'Never' }
     );
   });
   data.channelMappings = updatedMappings;

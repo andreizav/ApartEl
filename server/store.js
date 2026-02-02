@@ -12,6 +12,7 @@ function prevDate(days) {
 }
 
 function seed() {
+  const API_URL = process.env.API_PUBLIC_URL || 'http://localhost:4000';
   const tenant = {
     id: 't-demo',
     name: 'Demo Hospitality Group',
@@ -63,10 +64,10 @@ function seed() {
     { id: 'cm4', unitId: 'u4', unitName: 'Villa A', groupName: 'Seaside Villas', airbnbId: '', bookingId: '', markup: 0, isMapped: false, status: 'Inactive' },
   ];
   const icalConnections = [
-    { id: 'ical1', unitId: 'u3', unitName: 'Penthouse', importUrl: 'https://airbnb.com/calendar/ical/...', exportUrl: 'https://api.apartel.app/cal/t-demo/u3.ics', lastSync: '10 mins ago' },
-    { id: 'ical2', unitId: 'u1', unitName: 'Loft 101', importUrl: '', exportUrl: 'https://api.apartel.app/cal/t-demo/u1.ics', lastSync: 'Never' },
-    { id: 'ical3', unitId: 'u2', unitName: 'Loft 102', importUrl: '', exportUrl: 'https://api.apartel.app/cal/t-demo/u2.ics', lastSync: 'Never' },
-    { id: 'ical4', unitId: 'u4', unitName: 'Villa A', importUrl: '', exportUrl: 'https://api.apartel.app/cal/t-demo/u4.ics', lastSync: 'Never' },
+    { id: 'ical1', unitId: 'u3', unitName: 'Penthouse', importUrl: 'https://airbnb.com/calendar/ical/...', exportUrl: `${API_URL}/cal/t-demo/u3.ics`, lastSync: '10 mins ago' },
+    { id: 'ical2', unitId: 'u1', unitName: 'Loft 101', importUrl: '', exportUrl: `${API_URL}/cal/t-demo/u1.ics`, lastSync: 'Never' },
+    { id: 'ical3', unitId: 'u2', unitName: 'Loft 102', importUrl: '', exportUrl: `${API_URL}/cal/t-demo/u2.ics`, lastSync: 'Never' },
+    { id: 'ical4', unitId: 'u4', unitName: 'Villa A', importUrl: '', exportUrl: `${API_URL}/cal/t-demo/u4.ics`, lastSync: 'Never' },
   ];
   const otaConfigs = {
     airbnb: { isEnabled: true, clientId: 'ab_12345', clientSecret: '******' },

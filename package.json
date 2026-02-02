@@ -8,7 +8,8 @@
     "build": "ng build",
     "preview": "ng serve --configuration=production",
     "server": "node server/index.js",
-    "server:dev": "node --watch server/index.js"
+    "server:dev": "node --watch server/index.js",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@angular/build": "^21.1.0",
