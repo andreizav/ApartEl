@@ -60,6 +60,7 @@ export interface Booking {
   price?: number;
   createdAt: Date;
   assignedCleanerId?: string;
+  description?: string;
 }
 
 export interface ChatMessage {

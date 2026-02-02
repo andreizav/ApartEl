@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { PortfolioService, Booking } from '../shared/portfolio.service';
+import { ApiService } from '../shared/api.service';
 
 @Component({
   selector: 'app-multi-calendar',
@@ -12,6 +13,7 @@ import { PortfolioService, Booking } from '../shared/portfolio.service';
 })
 export class MultiCalendarComponent implements AfterViewInit, OnInit {
   private portfolioService = inject(PortfolioService);
+  private apiService = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -109,6 +111,234 @@ export class MultiCalendarComponent implements AfterViewInit, OnInit {
 
   // --- Methods ---
 
+  // --- Booking Modal State ---
+  isModalOpen = signal(false);
+  editingBookingId = signal<string | null>(null);
+
+  // Form Data
+  bookingForm = signal<{
+    unitId: string;
+    startDate: string; // YYYY-MM-DD
+    endDate: string;   // YYYY-MM-DD
+    price: number;
+    guestName: string;
+    guestPhone: string;
+    notes: string;
+  }>({
+    unitId: '',
+    startDate: '',
+    endDate: '',
+    price: 0,
+    guestName: '',
+    guestPhone: '',
+    notes: ''
+  });
+
+  // Client Selection State
+  isNewClient = signal(false);
+  selectedClientId = signal<string>(''); // For existing client selection
+
+  newClientForm = signal<{
+    name: string;
+    phone: string;
+    email: string;
+  }>({
+    name: '',
+    phone: '',
+    email: ''
+  });
+
+  // Derived list of clients for dropdown
+  availableClients = this.portfolioService.clients;
+
+  // --- Methods ---
+
+  openBookingModal(unitId?: string, startDate?: Date, bookingToEdit?: Booking) {
+    // Reset forms
+    this.isNewClient.set(false);
+    this.selectedClientId.set('');
+    this.newClientForm.set({ name: '', phone: '', email: '' });
+
+    if (bookingToEdit) {
+      // Edit Mode
+      this.editingBookingId.set(bookingToEdit.id);
+
+      const start = new Date(bookingToEdit.startDate);
+      const end = new Date(bookingToEdit.endDate);
+
+      this.bookingForm.set({
+        unitId: bookingToEdit.unitId,
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+        price: bookingToEdit.price || 0,
+        guestName: bookingToEdit.guestName,
+        guestPhone: bookingToEdit.guestPhone,
+        notes: bookingToEdit.description || ''
+      });
+
+      // Try to match with existing client
+      const existingClient = this.availableClients().find(c => c.phoneNumber === bookingToEdit.guestPhone);
+      if (existingClient) {
+        this.selectedClientId.set(existingClient.id);
+      }
+    } else {
+      // Create Mode
+      this.editingBookingId.set(null);
+
+      const today = new Date();
+      const start = startDate || today;
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1); // Default 1 night
+
+      this.bookingForm.set({
+        unitId: unitId || this.calendarGroups()[0]?.units[0]?.id || '',
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+        price: 0,
+        guestName: '',
+        guestPhone: '',
+        notes: ''
+      });
+    }
+
+    this.isModalOpen.set(true);
+  }
+
+  closeBookingModal() {
+    this.isModalOpen.set(false);
+    this.editingBookingId.set(null);
+  }
+
+  // Handle existing client selection
+  onClientSelect(clientId: string) {
+    this.selectedClientId.set(clientId);
+    const client = this.availableClients().find(c => c.id === clientId);
+    if (client) {
+      this.bookingForm.update(f => ({
+        ...f,
+        guestName: client.name,
+        guestPhone: client.phoneNumber
+      }));
+    }
+  }
+
+  saveBooking() {
+    const form = this.bookingForm();
+
+    // 1. Validation
+    if (!form.unitId || !form.startDate || !form.endDate) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    if (this.isNewClient()) {
+      const nc = this.newClientForm();
+      if (!nc.name || !nc.phone) {
+        alert('Please enter client name and phone.');
+        return;
+      }
+      form.guestName = nc.name;
+      form.guestPhone = nc.phone;
+    } else {
+      // Only require client selection if creating new or if user explicitly wants to link one
+      if (!this.editingBookingId() && !this.selectedClientId()) {
+        alert('Please select a client.');
+        return;
+      }
+
+      if (this.selectedClientId()) {
+        const client = this.availableClients().find(c => c.id === this.selectedClientId());
+        if (client) {
+          form.guestName = client.name;
+          form.guestPhone = client.phoneNumber;
+        }
+      }
+    }
+
+    // 2. Create New Client if needed (or verify existing)
+    if (this.isNewClient()) {
+      const nc = this.newClientForm();
+      const newClient = {
+        id: `c-${Date.now()}`,
+        name: nc.name,
+        phoneNumber: nc.phone,
+        email: nc.email || '',
+        address: '',
+        country: '',
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(nc.name)}&background=random`,
+        platform: 'whatsapp' as const,
+        status: 'New' as const,
+        lastActive: new Date(),
+        createdAt: new Date(),
+        unreadCount: 0,
+        online: false,
+        messages: [],
+        previousBookings: 0
+      };
+
+      this.apiService.addClient(newClient).subscribe(success => {
+        if (!success) {
+          alert('Client with this phone number already exists.');
+          return;
+        }
+        this.processBookingSave(form);
+      });
+    } else {
+      this.processBookingSave(form);
+    }
+  }
+
+  processBookingSave(form: any) {
+    // 3. Create or Update Booking
+    if (this.editingBookingId()) {
+      // UPDATE
+      const existing = this.bookings().find(b => b.id === this.editingBookingId());
+      if (existing) {
+        const updatedBooking: Booking = {
+          ...existing,
+          unitId: form.unitId,
+          guestName: form.guestName,
+          guestPhone: form.guestPhone,
+          startDate: new Date(form.startDate),
+          endDate: new Date(form.endDate),
+          price: form.price,
+          description: form.notes
+        };
+
+        this.apiService.updateBooking(updatedBooking).subscribe(result => {
+          if (result.success) {
+            this.closeBookingModal();
+          } else {
+            alert(result.error);
+          }
+        });
+      }
+    } else {
+      // CREATE
+      const newBooking = {
+        id: `b-${Date.now()}`,
+        unitId: form.unitId,
+        guestName: form.guestName,
+        guestPhone: form.guestPhone,
+        startDate: new Date(form.startDate),
+        endDate: new Date(form.endDate),
+        source: 'direct' as const,
+        status: 'confirmed' as const,
+        price: form.price,
+        description: form.notes,
+        createdAt: new Date()
+      };
+
+      this.apiService.createBooking(newBooking).subscribe(result => {
+        if (result.success) {
+          this.closeBookingModal();
+        } else {
+          alert(result.error || 'Failed to create booking.');
+        }
+      });
+    }
+  }
+
   toggleGroup(groupName: string) {
     this.expandedGroups.update(current => ({
       ...current,
@@ -130,12 +360,8 @@ export class MultiCalendarComponent implements AfterViewInit, OnInit {
   }
 
   navigateToClient(booking: Booking) {
-    if (booking.guestPhone) {
-      this.router.navigate(['/dashboard/clients'], { queryParams: { phone: booking.guestPhone } });
-    } else {
-      // Fallback or alert if no phone (maybe navigate to Clients root?)
-      alert('This booking has no client record associated.');
-    }
+    // Always open the booking modal in edit mode
+    this.openBookingModal(undefined, undefined, booking);
   }
 
   // Calculate position for a booking bar

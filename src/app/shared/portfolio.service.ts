@@ -249,6 +249,33 @@ export class PortfolioService {
     return { success: true };
   }
 
+  updateBooking(updatedBooking: Booking): { success: boolean; error?: string } {
+    const start = new Date(updatedBooking.startDate);
+    const end = new Date(updatedBooking.endDate);
+
+    if (start >= end) {
+      return { success: false, error: 'End date must be after check-in date.' };
+    }
+
+    // Check for overlaps (excluding self)
+    const overlaps = this.bookings().some(b => {
+      if (b.id === updatedBooking.id) return false; // Skip self
+      if (b.unitId !== updatedBooking.unitId) return false;
+      if (b.status === 'cancelled') return false;
+      const bStart = new Date(b.startDate);
+      const bEnd = new Date(b.endDate);
+      return start < bEnd && end > bStart;
+    });
+
+    if (overlaps) {
+      return { success: false, error: 'Selected dates are unavailable for this unit.' };
+    }
+
+    this.bookings.update(curr => curr.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+    this.logDbEvent('UPDATE', 'public.bookings', `ID: ${updatedBooking.id}`);
+    return { success: true };
+  }
+
   addClient(client: Client): boolean {
     if (this.clients().some(c => c.phoneNumber === client.phoneNumber)) return false;
     this.clients.update(l => [client, ...l]);

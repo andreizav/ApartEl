@@ -62,10 +62,47 @@ export class BookingsService {
                 price: createBookingDto.price ?? 0,
                 createdAt: createBookingDto.createdAt ? new Date(createBookingDto.createdAt) : new Date(),
                 assignedCleanerId: createBookingDto.assignedCleanerId,
+                description: createBookingDto.description,
             }
         });
 
         this.eventEmitter.emit('booking.created', { booking, tenantId });
+
+        return { success: true, booking };
+    }
+
+    async update(tenantId: string, id: string, updateDto: Partial<CreateBookingDto>) {
+        const data: any = { ...updateDto };
+
+        // Handle Date objects if present strings
+        if (data.startDate) data.startDate = new Date(data.startDate);
+        if (data.endDate) data.endDate = new Date(data.endDate);
+        if (data.createdAt) data.createdAt = new Date(data.createdAt);
+
+        // Ensure ID is removed from update data
+        const bookingId = id;
+        delete data.id;
+
+        // Use upsert to handle case where booking exists in frontend but not DB
+        const booking = await this.prisma.booking.upsert({
+            where: { id: bookingId },
+            update: data,
+            create: {
+                ...data,
+                id: bookingId,
+                tenantId,
+                // Ensure required fields have fallbacks if mostly full object provided
+                guestName: data.guestName || '',
+                startDate: data.startDate || new Date(),
+                endDate: data.endDate || new Date(),
+                source: data.source || 'direct',
+                status: data.status || 'confirmed',
+                price: data.price ?? 0,
+            }
+        });
+
+        // Emit updated event
+        this.eventEmitter.emit('booking.updated', { booking, tenantId });
 
         return { success: true, booking };
     }

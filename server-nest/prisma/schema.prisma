@@ -107,6 +107,7 @@ model Booking {
   createdAt         DateTime @default(now())
   
   assignedCleanerId String?
+  description       String?
 }
 
 model Client {

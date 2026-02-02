@@ -44,4 +44,8 @@ export class CreateBookingDto {
     @IsOptional()
     @IsString()
     assignedCleanerId?: string;
+
+    @IsOptional()
+    @IsString()
+    description?: string;
 }

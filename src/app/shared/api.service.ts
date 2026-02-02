@@ -122,6 +122,17 @@ export class ApiService {
     );
   }
 
+  updateBooking(booking: Booking): Observable<{ success: boolean; error?: string }> {
+    return this.http.patch<{ success: boolean; booking: Booking }>(`${this.apiUrl}/api/bookings/${booking.id}`, booking).pipe(
+      map((res) => {
+        const updated = this.portfolio.revive(res.booking) as Booking;
+        this.portfolio.bookings.update((list) => list.map(b => b.id === booking.id ? updated : b));
+        return { success: true };
+      }),
+      catchError((err) => of({ success: false, error: err.error?.error || 'Failed to update booking' }))
+    );
+  }
+
   addClient(client: Client): Observable<boolean> {
     return this.http.post<Client>(`${this.apiUrl}/api/clients`, client).pipe(
       map((c) => {
