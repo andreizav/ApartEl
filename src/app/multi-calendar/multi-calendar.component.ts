@@ -94,6 +94,19 @@ export class MultiCalendarComponent implements AfterViewInit, OnInit {
     return this.viewDate().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   });
 
+  // Optimize: Group bookings by unitId to avoid O(N*M) filtering in the template
+  bookingsByUnit = computed(() => {
+    const bookings = this.bookings();
+    const map = new Map<string, Booking[]>();
+    for (const b of bookings) {
+      if (!map.has(b.unitId)) {
+        map.set(b.unitId, []);
+      }
+      map.get(b.unitId)!.push(b);
+    }
+    return map;
+  });
+
   // --- Methods ---
 
   toggleGroup(groupName: string) {
@@ -180,6 +193,7 @@ export class MultiCalendarComponent implements AfterViewInit, OnInit {
 
   // Helper to filter bookings for a specific unit
   getBookingsForUnit(unitId: string): Booking[] {
-    return this.bookings().filter(b => b.unitId === unitId);
+    // Optimization: Use the pre-computed map instead of filtering on every call
+    return this.bookingsByUnit().get(unitId) || [];
   }
 }
