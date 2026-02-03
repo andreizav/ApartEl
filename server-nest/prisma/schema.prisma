@@ -110,6 +110,9 @@ model Booking {
   
   assignedCleanerId String?
   description       String?
+
+  @@index([tenantId])
+  @@index([unitId])
 }
 
 model Client {
@@ -133,6 +136,8 @@ model Client {
   previousBookings Int      @default(0)
   
   messages         Message[]
+
+  @@index([tenantId])
 }
 
 model Message {
@@ -148,6 +153,8 @@ model Message {
   
   // JSON field for attachment { name, type, size }
   attachment String?
+
+  @@index([clientId])
 }
 
 model Transaction {
