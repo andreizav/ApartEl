@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, ViewChild, ElementRef, AfterViewInit, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, ViewChild, ElementRef, AfterViewInit, OnInit, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -10,12 +10,14 @@ import { ApiService } from '../shared/api.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './multi-calendar.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MultiCalendarComponent implements AfterViewInit, OnInit {
   private portfolioService = inject(PortfolioService);
   private apiService = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   @ViewChild('headerScroll') headerScroll!: ElementRef<HTMLDivElement>;
   @ViewChild('bodyScroll') bodyScroll!: ElementRef<HTMLDivElement>;
@@ -51,6 +53,15 @@ export class MultiCalendarComponent implements AfterViewInit, OnInit {
   ngAfterViewInit() {
     // Initial sync
     this.onBodyScroll();
+
+    // Optimize: Bind scroll event manually with passive: true to avoid Angular CD overhead
+    const scrollEl = this.bodyScroll.nativeElement;
+    const onScroll = () => this.onBodyScroll();
+
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    this.destroyRef.onDestroy(() => {
+      scrollEl.removeEventListener('scroll', onScroll);
+    });
   }
 
   onBodyScroll() {
