@@ -173,6 +173,62 @@ export class PropertiesComponent implements OnInit {
       .reduce((sum, b) => sum + b.price, 0);
   });
 
+  averageDailyRate = computed(() => {
+    const bookings = this.unitBookings().filter(b => b.status === 'confirmed' && b.price > 0);
+    if (bookings.length === 0) return 0;
+
+    let totalNights = 0;
+    let totalRev = 0;
+
+    bookings.forEach(b => {
+      const nights = this.getNightCount(b.startDate, b.endDate);
+      if (nights > 0) {
+        totalNights += nights;
+        totalRev += (b.price || 0);
+      }
+    });
+
+    return totalNights > 0 ? totalRev / totalNights : 0;
+  });
+
+  occupancyRate = computed(() => {
+    const bookings = this.unitBookings().filter(b => b.status === 'confirmed' || b.source === 'blocked');
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
+    let bookedNights = 0;
+    bookings.forEach(b => {
+      const start = b.startDate > thirtyDaysAgo ? b.startDate : thirtyDaysAgo;
+      const end = b.endDate < now ? b.endDate : now;
+
+      if (start < end) {
+        const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        bookedNights += nights;
+      }
+    });
+
+    return (bookedNights / 30) * 100;
+  });
+
+  averageLengthOfStay = computed(() => {
+    const bookings = this.unitBookings().filter(b => b.status === 'confirmed');
+    if (bookings.length === 0) return 0;
+
+    const totalNights = bookings.reduce((sum, b) => sum + this.getNightCount(b.startDate, b.endDate), 0);
+    return totalNights / bookings.length;
+  });
+
+  monthlyRevenue = computed(() => {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    return this.unitBookings()
+      .filter(b => b.status === 'confirmed' && b.startDate >= firstDay && b.startDate <= lastDay)
+      .reduce((sum, b) => sum + (b.price || 0), 0);
+  });
+
   navigateToClient(booking: Booking) {
     if (booking.guestPhone) {
       this.router.navigate(['/dashboard/clients'], { queryParams: { phone: booking.guestPhone } });
@@ -432,13 +488,24 @@ export class PropertiesComponent implements OnInit {
     const data: any[] = [];
 
     // Header Row
-    data.push(['Group Name', 'Unit Name', 'Internal Name', 'Status']);
+    data.push([
+      'Group Name',
+      'Unit Name',
+      'Internal Name',
+      'Status',
+      'Official Address',
+      'Base Price',
+      'Cleaning Fee',
+      'WiFi SSID',
+      'WiFi Password',
+      'Access Codes'
+    ]);
 
     // Data Rows
     for (const group of this.portfolio()) {
       // Add Group Row (Optional, or just list units with their group)
       if (group.units.length === 0) {
-        data.push([group.name, '', '', '']);
+        data.push([group.name, '', '', '', '', '', '', '', '', '']);
       }
 
       for (const unit of group.units) {
@@ -446,7 +513,13 @@ export class PropertiesComponent implements OnInit {
           group.name,
           unit.name,
           unit.internalName || '',
-          unit.status
+          unit.status,
+          unit.officialAddress || '',
+          unit.basePrice || 0,
+          unit.cleaningFee || 0,
+          unit.wifiSsid || '',
+          unit.wifiPassword || '',
+          unit.accessCodes || ''
         ]);
       }
     }
@@ -479,78 +552,94 @@ export class PropertiesComponent implements OnInit {
   }
 
   private parseExcelData(rows: any[][]) {
-    const rawGroups: PropertyGroup[] = [];
-    let currentRawGroup: PropertyGroup | null = null;
-    const startIndex = rows.length > 0 && typeof rows[0][1] === 'string' && rows[0][1].includes('Appartment') ? 1 : 0;
+    // Expected Header: Group Name | Unit Name | Internal Name | Status | Official Address | Base Price | Cleaning Fee | WiFi SSID | WiFi Password | Access Codes
+    // Index:           0          | 1         | 2             | 3      | 4                | 5          | 6            | 7         | 8             | 9
 
-    for (let i = startIndex; i < rows.length; i++) {
+    const groupsMap = new Map<string, PropertyGroup>();
+    const currentPortfolio = this.portfolio();
+
+    // Initialize map with existing groups to detect merges
+    currentPortfolio.forEach(g => {
+      groupsMap.set(g.name.toLowerCase(), { ...g, units: [...g.units], isMerge: true });
+    });
+
+    for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (!row || row.length === 0) continue;
 
-      const groupName = row[1];
-      const unitName = row[2];
+      const groupName = (row[0] || '').toString().trim();
+      const unitName = (row[1] || '').toString().trim();
 
-      if (groupName && typeof groupName === 'string' && groupName.trim() !== '') {
-        currentRawGroup = {
-          id: `g-temp-${Date.now()}-${rawGroups.length}`,
-          name: groupName.trim(),
+      if (!groupName) continue;
+
+      let group = groupsMap.get(groupName.toLowerCase());
+      if (!group) {
+        group = {
+          id: `g-imp-${Date.now()}-${i}`,
+          name: groupName,
+          units: [],
           expanded: true,
-          units: []
+          isMerge: false
         };
-        rawGroups.push(currentRawGroup);
+        groupsMap.set(groupName.toLowerCase(), group);
       }
 
-      if (unitName && typeof unitName === 'string' && unitName.trim() !== '') {
-        if (!currentRawGroup) {
-          currentRawGroup = {
-            id: `g-temp-uncat-${Date.now()}`,
-            name: 'Uncategorized Import',
-            expanded: true,
-            units: []
-          };
-          rawGroups.push(currentRawGroup);
-        }
+      if (unitName) {
+        // Check if unit already exists in this group (duplicate check)
+        const unitExists = group.units.some(u => u.name.toLowerCase() === unitName.toLowerCase());
 
-        const newUnit: PropertyUnit = {
-          id: `u-imp-${Date.now()}-${currentRawGroup.units.length}-${Math.random().toString(36).substr(2, 5)}`,
-          name: unitName.trim(),
-          internalName: unitName.trim(),
-          officialAddress: '',
-          basePrice: 0,
-          cleaningFee: 0,
-          wifiSsid: '',
-          wifiPassword: '',
-          accessCodes: '',
-          status: 'Active',
-          photos: []
-        };
-        currentRawGroup.units.push(newUnit);
+        if (!unitExists) {
+          const newUnit: PropertyUnit = {
+            id: `u-imp-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
+            name: unitName,
+            internalName: (row[2] || unitName).toString().trim(),
+            status: (row[3] || 'Active').toString().trim() === 'Maintenance' ? 'Maintenance' : 'Active',
+            officialAddress: (row[4] || '').toString().trim(),
+            basePrice: Number(row[5]) || 0,
+            cleaningFee: Number(row[6]) || 0,
+            wifiSsid: (row[7] || '').toString().trim(),
+            wifiPassword: (row[8] || '').toString().trim(),
+            accessCodes: (row[9] || '').toString().trim(),
+            photos: [] // Photos are not imported from Excel
+          };
+          group.units.push(newUnit);
+        }
       }
     }
 
-    const currentPortfolio = this.portfolio();
-    const uniqueImport: PropertyGroup[] = [];
+    const previewData = Array.from(groupsMap.values()).filter(g =>
+      g.isMerge ? g.units.length > this.portfolio().find(p => p.id === g.id)?.units.length : true
+    );
 
-    rawGroups.forEach(importedGroup => {
-      const existingGroup = currentPortfolio.find(g => g.name.toLowerCase() === importedGroup.name.toLowerCase());
-      if (existingGroup) {
-        const newUnits = importedGroup.units.filter(u =>
-          !existingGroup.units.some(eu => eu.name.toLowerCase() === u.name.toLowerCase())
-        );
-        if (newUnits.length > 0) {
-          uniqueImport.push({ ...importedGroup, id: existingGroup.id, units: newUnits, isMerge: true });
-        }
+    // Correction: The filter above is tricky because 'units' in groupsMap has ALL units (old + new). 
+    // We want to show only groups that have NEW units or are NEW groups.
+
+    const finalPreview: PropertyGroup[] = [];
+
+    groupsMap.forEach(g => {
+      if (!g.isMerge) {
+        if (g.units.length > 0) finalPreview.push(g);
       } else {
-        if (importedGroup.units.length > 0) {
-          uniqueImport.push({ ...importedGroup, isMerge: false });
+        const original = currentPortfolio.find(p => p.id === g.id);
+        if (original && g.units.length > original.units.length) {
+          // Need to isolate only the new units for the preview logic if strictly adding
+          // However, our merge logic in confirmImport concat's them. 
+          // Let's refine the logic to be cleaner:
+          // Actually, let's keep it simple: Just pass the modified groups to preview.
+          // But wait, the previous logic separated new units. 
+
+          const newUnits = g.units.filter(u => !original.units.some(ou => ou.id === u.id));
+          if (newUnits.length > 0) {
+            finalPreview.push({ ...g, units: newUnits });
+          }
         }
       }
     });
 
-    if (uniqueImport.length > 0) {
-      this.importPreview.set(uniqueImport);
+    if (finalPreview.length > 0) {
+      this.importPreview.set(finalPreview);
     } else {
-      alert('No new properties found in file.');
+      alert('No new properties found in file to import.');
     }
   }
 
