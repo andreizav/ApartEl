@@ -32,7 +32,32 @@ export class PropertiesComponent implements OnInit {
   newEntryGroupId = signal('');
 
   editForm = signal<PropertyUnit | null>(null);
+  snapshot = signal<PropertyUnit | null>(null);
   isSaving = signal(false);
+
+  isDirty = computed(() => {
+    const form = this.editForm();
+    const original = this.snapshot();
+    if (!form || !original) return false;
+
+    // Deep compare fields to detect changes
+    return form.name !== original.name ||
+      form.internalName !== original.internalName ||
+      form.officialAddress !== original.officialAddress ||
+      form.basePrice !== original.basePrice ||
+      form.cleaningFee !== original.cleaningFee ||
+      form.wifiSsid !== original.wifiSsid ||
+      form.wifiPassword !== original.wifiPassword ||
+      form.accessCodes !== original.accessCodes ||
+      form.status !== original.status;
+  });
+
+  onFormChange() {
+    this.editForm.update(f => f ? { ...f } : null);
+  }
+
+  arrivalMessageModalOpen = signal(false);
+  generatedMessage = signal('');
 
   tabs = ['Basic Info', 'Guest History', 'Photos', 'Inventory', 'Settings'];
 
@@ -166,6 +191,7 @@ export class PropertiesComponent implements OnInit {
     }
     if (foundUnit) {
       this.editForm.set({ ...foundUnit });
+      this.snapshot.set({ ...foundUnit });
     }
   }
 
@@ -183,7 +209,10 @@ export class PropertiesComponent implements OnInit {
     this.apiService.updatePortfolio(this.portfolio()).subscribe({
       next: (success) => {
         this.isSaving.set(false);
-        if (!success) {
+        if (success) {
+          // Update snapshot to current form state after successful save
+          this.snapshot.set({ ...updatedUnit });
+        } else {
           alert('Failed to save changes.');
         }
       },
@@ -191,6 +220,75 @@ export class PropertiesComponent implements OnInit {
         this.isSaving.set(false);
         alert('An error occurred while saving.');
       }
+    });
+  }
+
+  openMap(address: string) {
+    if (!address) {
+      alert('Please enter an address first.');
+      return;
+    }
+    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    window.open(url, '_blank');
+  }
+
+  generateArrivalMessage() {
+    const unit = this.editForm();
+    if (!unit) return;
+
+    // Find next upcoming booking for this unit
+    const now = new Date();
+    const nextBooking = this.allBookings()
+      .filter(b => b.unitId === unit.id && b.status !== 'cancelled' && new Date(b.startDate) >= now)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+
+    const guestName = nextBooking ? nextBooking.guestName : '[Guest Name]';
+    const checkInDate = nextBooking ? new Date(nextBooking.startDate).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '[Date]';
+
+    const message = `Hello ${guestName}! 👋\n\nLooking forward to your stay at ${unit.name} on ${checkInDate}.\n\n📍 Address: ${unit.officialAddress}\n🌐 WiFi: ${unit.wifiSsid}\n🔑 Pass: ${unit.wifiPassword}\n🚪 Access Instructions: ${unit.accessCodes || 'Will be sent on check-in day.'}\n\nSee you soon!`;
+
+    this.generatedMessage.set(message);
+    this.arrivalMessageModalOpen.set(true);
+  }
+
+  getInitials(name: string): string {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  }
+
+  getNightCount(start: Date | string, end: Date | string): number {
+    const s = new Date(start);
+    const e = new Date(end);
+    const diffTime = Math.abs(e.getTime() - s.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'cancelled': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
+    }
+  }
+
+  getSourceClass(source: string): string {
+    switch (source.toLowerCase()) {
+      case 'airbnb': return 'text-[#ff385c] bg-[#ff385c]/10';
+      case 'booking': return 'text-[#003580] bg-[#003580]/10';
+      case 'expedia': return 'text-yellow-600 bg-yellow-400/10';
+      case 'direct': return 'text-green-600 bg-green-500/10';
+      default: return 'text-gray-600 bg-gray-100 dark:bg-gray-800 dark:text-gray-400';
+    }
+  }
+
+  copyToClipboard(text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Message copied to clipboard!');
     });
   }
 

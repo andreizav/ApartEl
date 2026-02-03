@@ -67,8 +67,8 @@
             [class.hover:bg-gray-50]="selectedUnitId() !== unit.id"
             [class.dark:hover:bg-[#253545]]="selectedUnitId() !== unit.id" (click)="selectUnit(unit.id)">
             <div class="flex items-center gap-2 overflow-hidden">
-              <span class="material-symbols-outlined text-[18px] flex-shrink-0"
-                [class.text-primary]="selectedUnitId() === unit.id">home</span>
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [class.bg-green-500]="unit.status === 'Active'"
+                [class.bg-gray-400]="unit.status === 'Maintenance'"></span>
               <span class="truncate">{{ unit.name }}</span>
             </div>
           </div>
@@ -115,7 +115,7 @@
           </div>
 
           <!-- SAVE BUTTON -->
-          @if (activeTab() === 'Basic Info' && editForm()) {
+          @if (activeTab() === 'Basic Info' && editForm() && isDirty()) {
           <button (click)="saveUnitInfo()" [disabled]="isSaving()"
             class="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50">
             @if (isSaving()) {
@@ -167,23 +167,30 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div class="space-y-1.5">
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Internal Name</label>
-                <input type="text" [(ngModel)]="form.internalName"
+                <input type="text" [(ngModel)]="form.internalName" (ngModelChange)="onFormChange()"
                   class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Public Display
                   Name</label>
-                <input type="text" [(ngModel)]="form.name"
+                <input type="text" [(ngModel)]="form.name" (ngModelChange)="onFormChange()"
                   class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
               </div>
               <div class="sm:col-span-2 space-y-1.5">
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Official
                   Address</label>
-                <div class="relative">
-                  <input type="text" [(ngModel)]="form.officialAddress"
-                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-                  <span
-                    class="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-gray-400">explore</span>
+                <div class="relative flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <input type="text" [(ngModel)]="form.officialAddress" (ngModelChange)="onFormChange()"
+                      class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <span
+                      class="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-gray-400">explore</span>
+                  </div>
+                  <button (click)="openMap(form.officialAddress)"
+                    class="p-2.5 bg-gray-100 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg text-gray-500 hover:text-primary transition-colors flex-shrink-0"
+                    title="Open on Map">
+                    <span class="material-symbols-outlined text-[20px]">map</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -208,7 +215,7 @@
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Nightly Rate</label>
                 <div class="relative">
                   <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
-                  <input type="number" [(ngModel)]="form.basePrice"
+                  <input type="number" [(ngModel)]="form.basePrice" (ngModelChange)="onFormChange()"
                     class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
                 </div>
               </div>
@@ -216,7 +223,7 @@
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Cleaning Fee</label>
                 <div class="relative">
                   <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
-                  <input type="number" [(ngModel)]="form.cleaningFee"
+                  <input type="number" [(ngModel)]="form.cleaningFee" (ngModelChange)="onFormChange()"
                     class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
                 </div>
               </div>
@@ -243,13 +250,13 @@
               <div class="space-y-1.5">
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi SSID
                   (Name)</label>
-                <input type="text" [(ngModel)]="form.wifiSsid"
+                <input type="text" [(ngModel)]="form.wifiSsid" (ngModelChange)="onFormChange()"
                   class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                   placeholder="e.g. MyProp_WiFi">
               </div>
               <div class="space-y-1.5">
                 <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi Password</label>
-                <input type="text" [(ngModel)]="form.wifiPassword"
+                <input type="text" [(ngModel)]="form.wifiPassword" (ngModelChange)="onFormChange()"
                   class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm font-mono text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                   placeholder="********">
               </div>
@@ -269,16 +276,24 @@
               </div>
             </div>
 
-            <div class="space-y-1.5">
-              <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Access
-                Instructions</label>
-              <textarea [(ngModel)]="form.accessCodes" rows="2"
-                class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
-                placeholder="Codes or instructions for the guest..."></textarea>
-              <p class="text-[10px] text-gray-400 flex items-center gap-1">
-                <span class="material-symbols-outlined text-[12px]">info</span>
-                Sent automatically via WhatsApp/Telegram before check-in.
-              </p>
+            <div class="space-y-4">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Access
+                  Instructions</label>
+                <textarea [(ngModel)]="form.accessCodes" (ngModelChange)="onFormChange()" rows="2"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                  placeholder="Codes or instructions for the guest..."></textarea>
+                <p class="text-[10px] text-gray-400 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">info</span>
+                  Sent automatically via WhatsApp/Telegram before check-in.
+                </p>
+              </div>
+
+              <button (click)="generateArrivalMessage()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-lg text-xs font-bold hover:bg-orange-500 hover:text-white transition-all">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                Generate Welcome Message
+              </button>
             </div>
           </div>
         </div>
@@ -298,53 +313,74 @@
 
           @if(unitBookings().length > 0) {
           <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left">
-              <thead
-                class="text-xs text-gray-500 uppercase bg-gray-50 dark:bg-[#111a22] border-b border-gray-200 dark:border-[#324d67]">
+            <table class="w-full text-sm text-left border-separate border-spacing-y-2">
+              <thead class="text-xs text-gray-500 uppercase bg-transparent">
                 <tr>
-                  <th class="px-6 py-3 font-bold">Guest</th>
-                  <th class="px-6 py-3 font-bold">Dates</th>
-                  <th class="px-6 py-3 font-bold">Source</th>
-                  <th class="px-6 py-3 font-bold">Status</th>
-                  <th class="px-6 py-3 font-bold text-right">Action</th>
+                  <th class="px-6 py-2 font-bold pl-8">Guest</th>
+                  <th class="px-6 py-2 font-bold">Stay</th>
+                  <th class="px-6 py-2 font-bold">Source</th>
+                  <th class="px-6 py-2 font-bold">Status</th>
+                  <th class="px-6 py-2 font-bold text-right pr-8">Action</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100 dark:divide-[#324d67]">
+              <tbody>
                 @for (booking of unitBookings(); track booking.id) {
-                <tr class="hover:bg-gray-50 dark:hover:bg-[#253545] transition-colors">
-                  <td class="px-6 py-3">
-                    <div class="font-bold text-[#111418] dark:text-white">{{ booking.guestName }}</div>
-                    <div class="text-xs text-gray-400 font-mono">{{ booking.guestPhone }}</div>
+                <tr
+                  class="bg-white dark:bg-[#1c2936] hover:bg-gray-50 dark:hover:bg-[#253545] transition-all shadow-sm rounded-xl group/row">
+                  <!-- Guest -->
+                  <td class="px-6 py-4 rounded-l-xl border-y border-l border-gray-100 dark:border-[#324d67]">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
+                        {{ getInitials(booking.guestName) }}
+                      </div>
+                      <div>
+                        <div class="font-bold text-[#111418] dark:text-white">{{ booking.guestName }}</div>
+                        <div class="text-xs text-gray-400 font-mono flex items-center gap-1">
+                          <span class="material-symbols-outlined text-[12px]">call</span>
+                          {{ booking.guestPhone }}
+                        </div>
+                      </div>
+                    </div>
                   </td>
-                  <td class="px-6 py-3 text-gray-600 dark:text-gray-300">
-                    {{ booking.startDate | date:'MMM d' }} - {{ booking.endDate | date:'MMM d, y' }}
+
+                  <!-- Stay -->
+                  <td class="px-6 py-4 border-y border-gray-100 dark:border-[#324d67]">
+                    <div class="flex flex-col">
+                      <span class="font-bold text-gray-700 dark:text-gray-200 text-sm">
+                        {{ booking.startDate | date:'MMM d' }} - {{ booking.endDate | date:'MMM d' }}
+                      </span>
+                      <span class="text-xs text-gray-400 font-medium">
+                        {{ getNightCount(booking.startDate, booking.endDate) }} nights • {{ booking.endDate |
+                        date:'yyyy'
+                        }}
+                      </span>
+                    </div>
                   </td>
-                  <td class="px-6 py-3">
-                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded"
-                      [class.bg-[#ff385c]/10]="booking.source === 'airbnb'"
-                      [class.text-[#ff385c]]="booking.source === 'airbnb'"
-                      [class.bg-[#003580]/10]="booking.source === 'booking'"
-                      [class.text-[#003580]]="booking.source === 'booking'"
-                      [class.bg-yellow-400/10]="booking.source === 'expedia'"
-                      [class.text-yellow-600]="booking.source === 'expedia'"
-                      [class.bg-green-500/10]="booking.source === 'direct'"
-                      [class.text-green-600]="booking.source === 'direct'">{{ booking.source }}</span>
-                  </td>
-                  <td class="px-6 py-3">
-                    <span class="flex items-center gap-1 text-xs font-medium text-gray-500">
-                      @if(booking.status === 'confirmed') { <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      Confirmed }
-                      @if(booking.status === 'pending') { <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                      Pending }
-                      @if(booking.status === 'cancelled') { <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                      Cancelled }
+
+                  <!-- Source -->
+                  <td class="px-6 py-4 border-y border-gray-100 dark:border-[#324d67]">
+                    <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-md tracking-wide"
+                      [ngClass]="getSourceClass(booking.source)">
+                      {{ booking.source }}
                     </span>
                   </td>
-                  <td class="px-6 py-3 text-right">
+
+                  <!-- Status -->
+                  <td class="px-6 py-4 border-y border-gray-100 dark:border-[#324d67]">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold capitalize inline-flex items-center gap-1.5"
+                      [ngClass]="getStatusClass(booking.status)">
+                      <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                      {{ booking.status }}
+                    </span>
+                  </td>
+
+                  <!-- Actions -->
+                  <td class="px-6 py-4 rounded-r-xl border-y border-r border-gray-100 dark:border-[#324d67] text-right">
                     <button (click)="navigateToClient(booking)"
-                      class="text-primary hover:text-blue-700 text-xs font-bold hover:underline flex items-center justify-end gap-1">
-                      <span class="material-symbols-outlined text-[14px]">chat</span>
-                      Open Chat
+                      class="text-gray-400 hover:text-primary transition-colors p-2 hover:bg-primary/10 rounded-lg group-hover/row:text-gray-600 dark:group-hover/row:text-gray-300"
+                      title="Open Conversation">
+                      <span class="material-symbols-outlined">chat</span>
                     </button>
                   </td>
                 </tr>
@@ -549,6 +585,47 @@
           class="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#253545] rounded-lg">Cancel</button>
         <button (click)="createEntry()" [disabled]="!newEntryName()"
           class="px-4 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">Create</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  @if (arrivalMessageModalOpen()) {
+  <div class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+    <div
+      class="bg-white dark:bg-[#1c2936] w-full max-w-md rounded-xl shadow-2xl border border-gray-200 dark:border-[#324d67] overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67] flex items-center justify-between">
+        <h3 class="text-lg font-bold text-[#111418] dark:text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-orange-500">campaign</span>
+          Welcome Message
+        </h3>
+        <button (click)="arrivalMessageModalOpen.set(false)"
+          class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-gray-500 uppercase font-bold tracking-wider">Preview for Next Guest</p>
+        <div class="p-4 bg-gray-50 dark:bg-[#111a22] border border-gray-100 dark:border-[#324d67] rounded-xl">
+          <p class="text-sm text-[#111418] dark:text-white whitespace-pre-wrap font-medium leading-relaxed">
+            {{ generatedMessage() }}
+          </p>
+        </div>
+        <p class="text-[10px] text-gray-400 italic">This message uses the next guest's name and check-in date if a
+          booking
+          exists.</p>
+      </div>
+
+      <div
+        class="px-6 py-4 bg-gray-50 dark:bg-[#111a22] border-t border-gray-200 dark:border-[#324d67] flex justify-end gap-3">
+        <button (click)="arrivalMessageModalOpen.set(false)"
+          class="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#253545] rounded-lg">Dismiss</button>
+        <button (click)="copyToClipboard(generatedMessage())"
+          class="px-4 py-2 text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 rounded-lg shadow-lg shadow-orange-500/20 flex items-center gap-2">
+          <span class="material-symbols-outlined text-[18px]">content_copy</span>
+          Copy Message
+        </button>
       </div>
     </div>
   </div>
