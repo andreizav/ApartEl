@@ -106,7 +106,7 @@ export class StaffComponent implements AfterViewChecked {
     if (!data.name || !data.email) return;
 
     if (this.isEditing() && data.id) {
-      this.portfolioService.updateStaff(data as Staff);
+      this.apiService.updateStaff(data as Staff);
     } else {
       const newMember: Staff = {
         id: `s-${Date.now()}`,
@@ -121,7 +121,7 @@ export class StaffComponent implements AfterViewChecked {
         online: false,
         lastActive: new Date()
       };
-      this.portfolioService.addStaff(newMember);
+      this.apiService.addStaff(newMember);
       if (!this.selectedStaffId()) {
         this.selectedStaffId.set(newMember.id);
       }
@@ -131,7 +131,7 @@ export class StaffComponent implements AfterViewChecked {
 
   deleteMember(id: string) {
     if (confirm('Are you sure you want to delete this staff member?')) {
-      this.portfolioService.deleteStaff(id);
+      this.apiService.deleteStaff(id);
       if (this.selectedStaffId() === id) {
         this.selectedStaffId.set(null);
       }

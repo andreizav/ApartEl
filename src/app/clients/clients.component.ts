@@ -417,23 +417,25 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
       createdAt: data.createdAt ? new Date(data.createdAt) : new Date()
     };
 
-    this.clients.update(list => {
-      if (this.isEditing()) {
-        const originalPhone = this.originalPhoneNumber();
-        return list.map(c => c.phoneNumber === originalPhone ? newClient : c);
-      } else {
-        if (list.some(c => c.phoneNumber === newClient.phoneNumber)) {
-          alert('Client with this phone number already exists!');
-          return list;
-        }
-        return [newClient, ...list];
+    // Use API service to persist to database
+    if (this.isEditing()) {
+      const originalPhone = this.originalPhoneNumber();
+      this.apiService.updateClient(newClient, originalPhone);
+      if (originalPhone === this.selectedClientId()) {
+        this.selectedClientId.set(newClient.phoneNumber);
       }
-    });
-
-    if (this.isEditing() && this.originalPhoneNumber() === this.selectedClientId()) {
-      this.selectedClientId.set(newClient.phoneNumber);
-    } else if (!this.isEditing()) {
-      this.selectedClientId.set(newClient.phoneNumber);
+    } else {
+      if (this.clients().some(c => c.phoneNumber === newClient.phoneNumber)) {
+        alert('Client with this phone number already exists!');
+        return;
+      }
+      this.apiService.addClient(newClient).subscribe(success => {
+        if (success) {
+          this.selectedClientId.set(newClient.phoneNumber);
+        } else {
+          alert('Failed to create client. Please try again.');
+        }
+      });
     }
 
     this.isModalOpen.set(false);
@@ -441,7 +443,7 @@ export class ClientsComponent implements OnInit, AfterViewChecked {
 
   deleteClient(phoneNumber: string) {
     if (confirm('Are you sure you want to delete this client and all their history?')) {
-      this.clients.update(list => list.filter(c => c.phoneNumber !== phoneNumber));
+      this.apiService.deleteClient(phoneNumber);
       if (this.selectedClientId() === phoneNumber) {
         this.selectedClientId.set(null);
       }
