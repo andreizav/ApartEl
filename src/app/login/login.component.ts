@@ -15,7 +15,7 @@ import { ApiService } from '../shared/api.service';
 export class LoginComponent implements OnInit {
   private router = inject(Router);
   private apiService = inject(ApiService);
-  
+
   // State
   authMode = signal<'login' | 'register'>('login');
   showPassword = signal(false);
@@ -63,8 +63,9 @@ export class LoginComponent implements OnInit {
       return;
     }
     const { email, password, rememberMe } = this.loginForm.value;
+    const cleanEmail = email?.trim();
     this.isLoading.set(true);
-    this.apiService.login(email!, password!).pipe(tap(() => this.isLoading.set(false))).subscribe({
+    this.apiService.login(cleanEmail!, password!).pipe(tap(() => this.isLoading.set(false))).subscribe({
       next: (result) => {
         if (result.success) {
           if (rememberMe && email) localStorage.setItem('apartEl_remembered_email', email);
@@ -120,7 +121,7 @@ export class LoginComponent implements OnInit {
   // Getters
   get loginEmailError() { return this.loginForm.get('email')?.invalid && this.loginForm.get('email')?.touched; }
   get loginPassError() { return this.loginForm.get('password')?.invalid && this.loginForm.get('password')?.touched; }
-  
+
   get regOrgError() { return this.registerForm.get('orgName')?.invalid && this.registerForm.get('orgName')?.touched; }
   get regEmailError() { return this.registerForm.get('email')?.invalid && this.registerForm.get('email')?.touched; }
   get regPassError() { return this.registerForm.get('password')?.invalid && this.registerForm.get('password')?.touched; }

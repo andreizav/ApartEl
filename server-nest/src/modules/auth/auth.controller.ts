@@ -12,6 +12,7 @@ export class AuthController {
 
     @Post('login')
     login(@Body() loginDto: LoginDto) {
+        console.log('Login request received (Controller):', loginDto);
         return this.authService.login(loginDto);
     }
 

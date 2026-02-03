@@ -46,3 +46,7 @@ server-nest/data.json
 server-nest/prisma/*.db
 server-nest/prisma/*.db-journal
 server-nest/prisma/migrations/
+
+# Temporary
+reproduce_*.js
+reproduce_*.txt

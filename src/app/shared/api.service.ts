@@ -22,9 +22,9 @@ export class ApiService {
   private readonly tokenService = inject(AuthTokenService);
   private readonly apiUrl = base();
 
-  login(email: string, _password?: string): Observable<{ success: boolean; error?: string }> {
+  login(email: string, password?: string): Observable<{ success: boolean; error?: string }> {
     return this.http
-      .post<{ token: string; user: Staff; tenant: unknown }>(`${this.apiUrl}/api/auth/login`, { email })
+      .post<{ token: string; user: Staff; tenant: unknown }>(`${this.apiUrl}/api/auth/login`, { email, password })
       .pipe(
         switchMap((res) => {
           this.tokenService.setToken(res.token);
