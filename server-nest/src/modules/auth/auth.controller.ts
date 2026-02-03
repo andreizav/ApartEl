@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Headers, UseGuards, Req } from '@nestjs/common';
+import { Body, Controller, Post, Headers, UseGuards, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -6,6 +6,7 @@ import { AuthGuard } from './auth.guard';
 import * as jwt from 'jsonwebtoken';
 
 @Controller('auth')
+@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 export class AuthController {
     constructor(private authService: AuthService) { }
 
