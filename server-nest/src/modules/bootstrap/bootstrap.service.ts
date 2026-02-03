@@ -90,7 +90,13 @@ export class BootstrapService {
         return {
             user,
             tenant,
-            portfolio: groups,
+            portfolio: groups.map(g => ({
+                ...g,
+                units: g.units.map(u => ({
+                    ...u,
+                    photos: u.photos ? JSON.parse(u.photos) : []
+                }))
+            })),
             bookings,
             clients: clientsWithMessages,
             staff,
@@ -148,7 +154,8 @@ export class BootstrapService {
                     status: 'Active',
                     officialAddress: '123 Main St, Central City',
                     wifiSsid: 'ApartEL_Guest',
-                    wifiPassword: 'welcome-home'
+                    wifiPassword: 'welcome-home',
+                    photos: '[]'
                 }
             });
         }

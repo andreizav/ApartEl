@@ -11,7 +11,15 @@ export class PortfolioService {
             where: { tenantId },
             include: { units: true }
         });
-        return groups;
+
+        // Parse unit photos JSON string back into array
+        return groups.map(group => ({
+            ...group,
+            units: group.units.map(unit => ({
+                ...unit,
+                photos: unit.photos ? JSON.parse(unit.photos) : []
+            }))
+        }));
     }
 
     async update(tenantId: string, portfolio: any[]) {
@@ -51,7 +59,8 @@ export class PortfolioService {
                             wifiPassword: u.wifiPassword,
                             accessCodes: u.accessCodes,
                             status: u.status ?? 'Active',
-                            assignedCleanerId: u.assignedCleanerId
+                            assignedCleanerId: u.assignedCleanerId,
+                            photos: u.photos ? JSON.stringify(u.photos) : '[]'
                         },
                         create: {
                             id: u.id,
@@ -65,7 +74,8 @@ export class PortfolioService {
                             wifiPassword: u.wifiPassword,
                             accessCodes: u.accessCodes,
                             status: u.status ?? 'Active',
-                            assignedCleanerId: u.assignedCleanerId
+                            assignedCleanerId: u.assignedCleanerId,
+                            photos: u.photos ? JSON.stringify(u.photos) : '[]'
                         }
                     });
                 }

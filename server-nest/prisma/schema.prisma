@@ -82,6 +82,7 @@ model Unit {
   wifiPassword    String?
   accessCodes     String?
   status          String
+  photos          String? @default("[]")
   
   assignedCleanerId String?
   

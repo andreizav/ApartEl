@@ -38,6 +38,7 @@ export interface PropertyUnit {
   accessCodes: string;
   status: 'Active' | 'Maintenance';
   assignedCleanerId?: string;
+  photos: string[];
 }
 
 export interface PropertyGroup {

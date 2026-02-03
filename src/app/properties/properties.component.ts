@@ -48,12 +48,51 @@ export class PropertiesComponent implements OnInit {
       form.cleaningFee !== original.cleaningFee ||
       form.wifiSsid !== original.wifiSsid ||
       form.wifiPassword !== original.wifiPassword ||
-      form.accessCodes !== original.accessCodes ||
-      form.status !== original.status;
+      form.status !== original.status ||
+      JSON.stringify(form.photos) !== JSON.stringify(original.photos);
   });
 
   onFormChange() {
     this.editForm.update(f => f ? { ...f } : null);
+  }
+
+  handlePhotoUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        const base64 = e.target.result;
+        this.editForm.update(u => {
+          if (!u) return null;
+          return { ...u, photos: [...(u.photos || []), base64] };
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+    input.value = ''; // Reset input
+  }
+
+  removePhoto(index: number) {
+    this.editForm.update(u => {
+      if (!u) return null;
+      const newPhotos = [...(u.photos || [])];
+      newPhotos.splice(index, 1);
+      return { ...u, photos: newPhotos };
+    });
+  }
+
+  setCoverPhoto(index: number) {
+    this.editForm.update(u => {
+      if (!u) return null;
+      const photos = [...(u.photos || [])];
+      if (index > 0 && index < photos.length) {
+        const cover = photos[index];
+        photos.splice(index, 1);
+        photos.unshift(cover);
+      }
+      return { ...u, photos };
+    });
   }
 
   arrivalMessageModalOpen = signal(false);
@@ -101,6 +140,37 @@ export class PropertiesComponent implements OnInit {
     return this.allBookings()
       .filter(b => b.unitId === uid)
       .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
+  });
+
+  nextCheckIn = computed(() => {
+    const bookings = this.unitBookings();
+    const now = new Date();
+    const upcoming = bookings
+      .filter(b => b.startDate >= now && b.status === 'confirmed')
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+    if (upcoming.length === 0) return null;
+    const diffTime = upcoming[0].startDate.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  });
+
+  upcomingBookingsCount = computed(() => {
+    const bookings = this.unitBookings();
+    const now = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+    return bookings.filter(b =>
+      b.startDate >= now &&
+      b.startDate <= thirtyDaysFromNow &&
+      b.status === 'confirmed'
+    ).length;
+  });
+
+  totalUnitRevenue = computed(() => {
+    return this.unitBookings()
+      .filter(b => b.status === 'confirmed')
+      .reduce((sum, b) => sum + b.price, 0);
   });
 
   navigateToClient(booking: Booking) {
@@ -342,7 +412,8 @@ export class PropertiesComponent implements OnInit {
         wifiSsid: '',
         wifiPassword: '',
         accessCodes: '',
-        status: 'Active'
+        status: 'Active',
+        photos: []
       };
 
       this.portfolio.update(groups => groups.map(g => {
@@ -450,7 +521,8 @@ export class PropertiesComponent implements OnInit {
           wifiSsid: '',
           wifiPassword: '',
           accessCodes: '',
-          status: 'Active'
+          status: 'Active',
+          photos: []
         };
         currentRawGroup.units.push(newUnit);
       }
