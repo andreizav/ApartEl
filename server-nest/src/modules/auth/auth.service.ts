@@ -4,6 +4,7 @@ import { PrismaService } from '../../shared/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import * as jwt from 'jsonwebtoken';
 import { RegisterDto } from './dto/register.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -35,13 +36,22 @@ export class AuthService {
     }
 
     async login(loginDto: LoginDto) {
-        const { email } = loginDto;
+        const { email, password } = loginDto;
         // SQLite doesn't support mode:'insensitive', so we compare with lowercase email
         const allStaff = await this.prisma.staff.findMany();
         const user = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
 
         if (!user) {
             throw new UnauthorizedException('User not found');
+        }
+
+        if (!user.password) {
+            throw new UnauthorizedException('Account requires password setup.');
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            throw new UnauthorizedException('Invalid credentials');
         }
 
         const token = this.createToken(user);
@@ -70,7 +80,7 @@ export class AuthService {
     }
 
     async register(registerDto: RegisterDto) {
-        const { email, orgName } = registerDto;
+        const { email, orgName, password } = registerDto;
 
         // SQLite doesn't support mode:'insensitive'
         const allStaff = await this.prisma.staff.findMany();
@@ -78,6 +88,8 @@ export class AuthService {
         if (existing) {
             throw new ConflictException('Email already registered');
         }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
 
         const tenantId = `t-${Date.now()}`;
         const tenant = await this.prisma.tenant.create({
@@ -99,6 +111,7 @@ export class AuthService {
                 name: String(email).split('@')[0],
                 role: 'Manager',
                 email: String(email),
+                password: hashedPassword,
                 phone: '',
                 avatar: `https://picsum.photos/seed/${userId}/100/100`,
                 status: 'Active',

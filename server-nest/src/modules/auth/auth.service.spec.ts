@@ -2,6 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../shared/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+    hash: jest.fn(),
+    compare: jest.fn(),
+}));
 
 describe('AuthService', () => {
     let service: AuthService;
@@ -50,14 +56,16 @@ describe('AuthService', () => {
         });
 
         mockPrismaService.staff.findMany.mockResolvedValue([
-             { id: 'u1', email: 'test@test.com', tenantId: 't1' }
+             { id: 'u1', email: 'test@test.com', tenantId: 't1', password: 'hashedpassword' }
         ]);
+        (bcrypt.compare as jest.Mock).mockResolvedValue(true);
         mockPrismaService.tenant.findUnique.mockResolvedValue({ id: 't1', features: '{}' });
         mockPrismaService.staff.update.mockResolvedValue({});
 
-        const result = await service.login({ email: 'test@test.com' });
+        const result = await service.login({ email: 'test@test.com', password: 'password' });
 
         expect(result.token).toBeDefined();
+        expect(bcrypt.compare).toHaveBeenCalledWith('password', 'hashedpassword');
     });
 
     it('should throw error in production if JWT_SECRET is missing', async () => {
@@ -68,10 +76,11 @@ describe('AuthService', () => {
         });
 
         mockPrismaService.staff.findMany.mockResolvedValue([
-             { id: 'u1', email: 'test@test.com', tenantId: 't1' }
+             { id: 'u1', email: 'test@test.com', tenantId: 't1', password: 'hashedpassword' }
         ]);
+        (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-        await expect(service.login({ email: 'test@test.com' }))
+        await expect(service.login({ email: 'test@test.com', password: 'password' }))
             .rejects
             .toThrow('CRITICAL SECURITY ERROR: JWT_SECRET is not defined');
     });
@@ -84,12 +93,51 @@ describe('AuthService', () => {
         });
 
         mockPrismaService.staff.findMany.mockResolvedValue([
-             { id: 'u1', email: 'test@test.com', tenantId: 't1' }
+             { id: 'u1', email: 'test@test.com', tenantId: 't1', password: 'hashedpassword' }
         ]);
+        (bcrypt.compare as jest.Mock).mockResolvedValue(true);
         mockPrismaService.tenant.findUnique.mockResolvedValue({ id: 't1', features: '{}' });
         mockPrismaService.staff.update.mockResolvedValue({});
 
-        const result = await service.login({ email: 'test@test.com' });
+        const result = await service.login({ email: 'test@test.com', password: 'password' });
         expect(result.token).toBeDefined();
+    });
+
+    it('should fail login if password does not match', async () => {
+        mockPrismaService.staff.findMany.mockResolvedValue([
+             { id: 'u1', email: 'test@test.com', tenantId: 't1', password: 'hashedpassword' }
+        ]);
+        (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+        await expect(service.login({ email: 'test@test.com', password: 'wrongpassword' }))
+            .rejects
+            .toThrow('Invalid credentials');
+    });
+
+    it('should fail login if user has no password setup', async () => {
+        mockPrismaService.staff.findMany.mockResolvedValue([
+             { id: 'u1', email: 'test@test.com', tenantId: 't1', password: null }
+        ]);
+
+        await expect(service.login({ email: 'test@test.com', password: 'password' }))
+            .rejects
+            .toThrow('Account requires password setup');
+    });
+
+    it('should hash password on register', async () => {
+        mockPrismaService.staff.findMany.mockResolvedValue([]);
+        mockPrismaService.tenant.create.mockResolvedValue({ features: '{}' });
+        mockPrismaService.staff.create.mockResolvedValue({ id: 'u1', email: 'new@test.com' });
+        (bcrypt.hash as jest.Mock).mockResolvedValue('newhashedpassword');
+        mockConfigService.get.mockReturnValue('secret');
+
+        await service.register({ email: 'new@test.com', orgName: 'Test Org', password: 'newpassword' });
+
+        expect(bcrypt.hash).toHaveBeenCalledWith('newpassword', 10);
+        expect(mockPrismaService.staff.create).toHaveBeenCalledWith(expect.objectContaining({
+            data: expect.objectContaining({
+                password: 'newhashedpassword'
+            })
+        }));
     });
 });

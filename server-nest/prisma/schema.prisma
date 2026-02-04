@@ -47,6 +47,7 @@ model Staff {
   name        String
   role        String
   email       String
+  password    String?  // Hashed password
   phone       String?
   avatar      String?
   status      String
