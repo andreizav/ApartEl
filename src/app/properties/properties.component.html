@@ -518,11 +518,6 @@
                   <span class="text-sm font-medium text-[#111418] dark:text-white">{{ item.name }}</span>
                 </div>
                 <div class="flex items-center opacity-0 group-hover/inv-item:opacity-100 transition-opacity gap-1">
-                  <button (click)="openInventoryModal(item)"
-                    class="p-1.5 text-gray-400 hover:text-primary hover:bg-primary/10 rounded transition-colors"
-                    title="Edit" aria-label="Edit item">
-                    <span class="material-symbols-outlined text-[18px]">edit</span>
-                  </button>
                   <button (click)="deleteInventoryItem(item.id)"
                     class="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
                     title="Delete" aria-label="Delete item">
@@ -1021,29 +1016,45 @@
             [class.shadow-sm]="txType() === 'expense'" (click)="updateTxType('expense')">Expense</button>
         </div>
 
-        <!-- Date & Amount & Quantity -->
-        <div class="grid gap-4" [class.grid-cols-2]="!isInventoryCategorySelected()"
-          [class.grid-cols-3]="isInventoryCategorySelected()">
+        <!-- Date & Amount/Calculated Total -->
+        <div class="grid grid-cols-2 gap-4">
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-gray-500 uppercase">Date</label>
             <input type="date" [ngModel]="txDate()" (ngModelChange)="txDate.set($event)"
               class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white">
           </div>
-          <div class="space-y-1.5">
-            <label class="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
-            <input type="number" [ngModel]="txAmount()" (ngModelChange)="txAmount.set($event)" min="0" step="0.01"
-              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white">
-          </div>
 
-          @if(isInventoryCategorySelected()) {
+          @if (!isInventoryCategorySelected()) {
           <div class="space-y-1.5 animate-fade-in">
-            <label class="text-xs font-bold text-gray-500 uppercase">Quantity *</label>
-            <input type="number" [ngModel]="txQuantity()" (ngModelChange)="txQuantity.set($event)" min="1" step="1"
+            <label class="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
+            <input type="number" [ngModel]="txAmount()" (ngModelChange)="txAmount.set($event)"
               class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white"
-              placeholder="Qty">
+              min="0">
+          </div>
+          } @else {
+          <div class="space-y-1.5 animate-fade-in">
+            <label class="text-xs font-bold text-gray-500 uppercase">Total Amount</label>
+            <div
+              class="flex items-center w-full bg-gray-100 dark:bg-[#1b252f] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white font-bold opacity-75 h-[38px]">
+              {{ calculatedAmount() | currency }}
+            </div>
           </div>
           }
         </div>
+
+        <!-- Quantity (Only if Inventory) -->
+        @if (isInventoryCategorySelected()) {
+        <div class="space-y-1.5 animate-fade-in">
+          <label class="text-xs font-bold text-gray-500 uppercase">Quantity *</label>
+          <input type="number" [ngModel]="txQuantity()" (ngModelChange)="txQuantity.set($event)"
+            class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white"
+            min="1" placeholder="Enter quantity">
+          <p class="text-xs text-gray-400">
+            Price per unit: {{ (calculatedAmount() && txQuantity() ? calculatedAmount()! / txQuantity()! : 0) | currency
+            }}
+          </p>
+        </div>
+        }
 
         <!-- Category -->
         <div class="space-y-1.5">

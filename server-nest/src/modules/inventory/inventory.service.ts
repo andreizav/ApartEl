@@ -22,8 +22,28 @@ export class InventoryService {
         if (!Array.isArray(inventory)) throw new BadRequestException('inventory must be an array');
 
         await this.prisma.$transaction(async (tx) => {
+            const incomingCatIds = inventory.map(c => c.id);
+
+            // 1. Delete items belonging to categories that are about to be deleted
+            await tx.inventoryItem.deleteMany({
+                where: {
+                    category: {
+                        tenantId,
+                        id: { notIn: incomingCatIds }
+                    }
+                }
+            });
+
+            // 2. Delete categories not present in the new set
+            await tx.inventoryCategory.deleteMany({
+                where: {
+                    tenantId,
+                    id: { notIn: incomingCatIds }
+                }
+            });
+
             for (const category of inventory) {
-                // 1. Upsert the Category
+                // 3. Upsert the Category
                 await tx.inventoryCategory.upsert({
                     where: { id: category.id },
                     update: {
@@ -36,7 +56,17 @@ export class InventoryService {
                     }
                 });
 
-                // 2. Upsert the Items within the category
+                const incomingItemIds = (category.items || []).map(i => i.id);
+
+                // 4. Delete items in this category that are no longer present
+                await tx.inventoryItem.deleteMany({
+                    where: {
+                        categoryId: category.id,
+                        id: { notIn: incomingItemIds }
+                    }
+                });
+
+                // 5. Upsert the Items within the category
                 for (const item of (category.items || [])) {
                     await tx.inventoryItem.upsert({
                         where: { id: item.id },

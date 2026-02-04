@@ -14,7 +14,8 @@ export interface Category {
   id: string;
   name: string;
   type: 'income' | 'expense';
-  subCategories: { id: string; name: string }[];
+  isInventory?: boolean;
+  subCategories: { id: string; name: string; price?: number }[];
 }
 
 interface CategoryBreakdown {
@@ -23,6 +24,10 @@ interface CategoryBreakdown {
   type: 'income' | 'expense';
   children: { name: string; amount: number }[];
   expanded: boolean;
+}
+
+interface NewTransactionState extends Partial<Transaction> {
+  quantity?: number;
 }
 
 @Component({
@@ -54,13 +59,14 @@ export class PnLComponent {
   isImportModalOpen = signal(false);
   isModalOpen = signal(false);
 
-  newTransaction = signal<Partial<Transaction>>({
+  newTransaction = signal<NewTransactionState>({
     date: new Date().toISOString().split('T')[0],
     currency: 'USD',
     property: 'General',
     type: 'expense',
     category: '',
-    subCategory: ''
+    subCategory: '',
+    quantity: 1
   });
 
   isDownloadMenuOpen = signal(false);
@@ -165,11 +171,32 @@ export class PnLComponent {
     return Object.values(groups).sort((a, b) => b.amount - a.amount);
   });
 
-  availableCategories = computed(() => this.categories().filter(c => c.type === this.newTransaction().type));
+  availableCategories = computed(() => {
+    const type = this.newTransaction().type;
+    const baseCats = this.categories().filter(c => c.type === type);
+
+    if (type === 'expense') {
+      const invCats = this.portfolioService.inventory().map(c => ({
+        id: c.id,
+        name: c.name,
+        type: 'expense' as const,
+        isInventory: true,
+        subCategories: c.items.map(i => ({ id: i.id, name: i.name, price: i.price }))
+      }));
+      return [...baseCats, ...invCats];
+    }
+    return baseCats;
+  });
   availableSubCategories = computed(() => {
     const catName = this.newTransaction().category;
-    const cat = this.categories().find(c => c.name === catName);
-    return cat ? cat.subCategories.map(s => s.name) : [];
+    const cat = this.availableCategories().find(c => c.name === catName);
+    return cat ? cat.subCategories : [];
+  });
+
+  isInventoryCategorySelected = computed(() => {
+    const catName = this.newTransaction().category;
+    const cat = this.availableCategories().find(c => c.name === catName);
+    return !!cat?.isInventory;
   });
 
   expandedCategories = signal<Map<string, boolean>>(new Map());
@@ -235,6 +262,42 @@ export class PnLComponent {
     if (!this.canSaveTransaction()) return;
 
     const t = this.newTransaction();
+    const isInventory = this.isInventoryCategorySelected();
+
+    if (isInventory) {
+      // Inventory Refill Logic
+      const qty = t.quantity || 0;
+      const totalAmount = t.amount || 0;
+
+      if (qty <= 0 || totalAmount <= 0) return;
+
+      const unitPrice = totalAmount / qty;
+      const catName = t.category!;
+      const subName = t.subCategory!;
+
+      // Find IDs
+      const cat = this.availableCategories().find(c => c.name === catName);
+      const sub = cat?.subCategories.find(s => s.name === subName);
+
+      if (cat && sub) {
+        // Normalize price to USD for Inventory Storage
+        let normalizedPrice = unitPrice;
+        if (t.currency !== 'USD') {
+          const rates = this.exchangeRates();
+          const rateToUSD = rates[t.currency as 'UAH' | 'EUR'] || 1;
+          // Logic: If UAH=41, PriceInUAH=410, PriceInUSD = 410 / 41 = 10.
+          // But my exchangeRates map might be { UAH: 41, EUR: 0.9 }. 
+          // If Rate is "How many X per 1 USD": PriceUSD = PriceX / RateX.
+          normalizedPrice = unitPrice / rateToUSD;
+        }
+
+        this.apiService.refillInventoryItem(cat.id, sub.id, qty, normalizedPrice).subscribe(() => {
+          // Refresh inventory
+          this.apiService.fetchInventory().subscribe();
+        });
+      }
+    }
+
     const newTx: Transaction = {
       id: `t-${Date.now()}`, date: t.date!, property: t.property!, category: t.category!, subCategory: t.subCategory || 'General', description: t.description || '', amount: t.amount!, currency: t.currency as any, type: t.type as any
     };
@@ -242,8 +305,29 @@ export class PnLComponent {
     this.isModalOpen.set(false);
   }
 
-  updateNewTx(field: keyof Transaction, value: any) {
+  updateNewTx(field: keyof NewTransactionState, value: any) {
+    if (field === 'currency') {
+      const oldCur = this.newTransaction().currency || 'USD';
+      const newCur = value as 'USD' | 'UAH' | 'EUR';
+      const currentAmount = this.newTransaction().amount || 0;
+
+      if (currentAmount > 0 && oldCur !== newCur) {
+        const rates = this.exchangeRates();
+        const rateOld = rates[oldCur] || 1;
+        const rateNew = rates[newCur] || 1;
+        // Convert: Amount / OldRate * NewRate (assuming rates are relative to base, here base is USD=1)
+        // Actually portfolio service usually haves rates relative to USD.
+        // If USD=1, UAH=41. 100 USD = 100 * 41 / 1 = 4100 UAH.
+        // 4100 UAH to USD = 4100 * 1 / 41 = 100.
+        // Formula: Amount * (TargetRate / SourceRate)
+        const newAmount = currentAmount * (rateNew / rateOld);
+        this.newTransaction.update(prev => ({ ...prev, amount: parseFloat(newAmount.toFixed(2)), currency: newCur }));
+        return;
+      }
+    }
+
     this.newTransaction.update(prev => ({ ...prev, [field]: value }));
+
     if (field === 'type') {
       this.updateNewTx('category', '');
       this.updateNewTx('subCategory', '');

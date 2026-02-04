@@ -20,38 +20,14 @@ export class InventoryComponent {
 
   // Modal State
   isModalOpen = signal(false);
-  modalType = signal<'category' | 'item' | 'refill'>('item');
+  modalType = signal<'category' | 'item'>('item');
   targetCategoryId = signal<string | null>(null);
   targetItemId = signal<string | null>(null);
   newItemName = signal('');
   newItemPrice = signal<number>(0);
-  refillQuantity = signal<number>(0);
 
 
   // Actions
-  openRefillModal(categoryId: string, item: InventoryItem) {
-    this.modalType.set('refill');
-    this.targetCategoryId.set(categoryId);
-    this.targetItemId.set(item.id);
-    this.newItemPrice.set(item.price ?? 0);
-    this.refillQuantity.set(0);
-    this.isModalOpen.set(true);
-  }
-
-  submitRefill() {
-    const catId = this.targetCategoryId();
-    const itemId = this.targetItemId();
-    const qty = this.refillQuantity();
-    const price = this.newItemPrice();
-
-    if (!catId || !itemId) return;
-
-    this.apiService.refillInventoryItem(catId, itemId, qty, price).subscribe((updatedInventory) => {
-      // Optimistic update isn't strictly necessary if backend returns fresh data
-      this.portfolioService.inventory.set(updatedInventory);
-      this.isModalOpen.set(false);
-    });
-  }
 
   deleteItem(categoryId: string, itemId: string) {
     if (!confirm('Delete this item?')) return;
