@@ -183,167 +183,7 @@
     <!-- Scrollable Content Area -->
     <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 dark:bg-[#111a22]/30">
 
-      @if (activeTab() === 'Basic Info' && editForm(); as form) {
-      <div class="animate-fade-in space-y-6 pb-20">
-        <!-- Section: General Content -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Location Card -->
-          <div
-            class="md:col-span-2 bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
-            <div class="flex items-center gap-3 mb-6">
-              <div
-                class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/10 flex items-center justify-center text-primary">
-                <span class="material-symbols-outlined">location_on</span>
-              </div>
-              <div>
-                <h3 class="font-bold text-[#111418] dark:text-white">Location & Identity</h3>
-                <p class="text-xs text-gray-500">Property name and official registration</p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Internal Name</label>
-                <input type="text" id="internalName" name="internalName" [(ngModel)]="form.internalName"
-                  (ngModelChange)="onFormChange()"
-                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Public Display
-                  Name</label>
-                <input type="text" id="publicName" name="publicName" [(ngModel)]="form.name"
-                  (ngModelChange)="onFormChange()"
-                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-              </div>
-              <div class="sm:col-span-2 space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Official
-                  Address</label>
-                <div class="relative flex items-center gap-2">
-                  <div class="relative flex-1">
-                    <input type="text" id="officialAddress" name="officialAddress" [(ngModel)]="form.officialAddress"
-                      (ngModelChange)="onFormChange()"
-                      class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-                    <span
-                      class="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-gray-400">explore</span>
-                  </div>
-                  <button (click)="openMap(form.officialAddress)"
-                    class="p-2.5 bg-gray-100 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg text-gray-500 hover:text-primary transition-colors flex-shrink-0"
-                    title="Open on Map" aria-label="Open on Map">
-                    <span class="material-symbols-outlined text-[20px]">map</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Pricing Card -->
-          <div
-            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
-            <div class="flex items-center gap-3 mb-6">
-              <div
-                class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/10 flex items-center justify-center text-green-600">
-                <span class="material-symbols-outlined">payments</span>
-              </div>
-              <div>
-                <h3 class="font-bold text-[#111418] dark:text-white">Base Rates</h3>
-                <p class="text-xs text-gray-500">Default fees ($)</p>
-              </div>
-            </div>
-
-            <div class="space-y-5">
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Nightly Rate</label>
-                <div class="relative">
-                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
-                  <input type="number" id="basePrice" name="basePrice" [(ngModel)]="form.basePrice"
-                    (ngModelChange)="onFormChange()"
-                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-                </div>
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Cleaning Fee</label>
-                <div class="relative">
-                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
-                  <input type="number" id="cleaningFee" name="cleaningFee" [(ngModel)]="form.cleaningFee"
-                    (ngModelChange)="onFormChange()"
-                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Section: Connectivity & Access -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
-            <div class="flex items-center gap-3 mb-6">
-              <div
-                class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/10 flex items-center justify-center text-purple-600">
-                <span class="material-symbols-outlined">wifi</span>
-              </div>
-              <div>
-                <h3 class="font-bold text-[#111418] dark:text-white">Guest Connectivity</h3>
-                <p class="text-xs text-gray-500">WiFi credentials for guests</p>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi SSID
-                  (Name)</label>
-                <input type="text" id="wifiSsid" name="wifiSsid" [(ngModel)]="form.wifiSsid"
-                  (ngModelChange)="onFormChange()"
-                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  placeholder="e.g. MyProp_WiFi">
-              </div>
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi Password</label>
-                <input type="text" id="wifiPassword" name="wifiPassword" [(ngModel)]="form.wifiPassword"
-                  (ngModelChange)="onFormChange()"
-                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm font-mono text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  placeholder="********">
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
-            <div class="flex items-center gap-3 mb-6">
-              <div
-                class="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-600">
-                <span class="material-symbols-outlined">key</span>
-              </div>
-              <div>
-                <h3 class="font-bold text-[#111418] dark:text-white">Smart Access</h3>
-                <p class="text-xs text-gray-500">Door and alarm codes</p>
-              </div>
-            </div>
-
-            <div class="space-y-4">
-              <div class="space-y-1.5">
-                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Access
-                  Instructions</label>
-                <textarea [(ngModel)]="form.accessCodes" (ngModelChange)="onFormChange()" rows="2"
-                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
-                  placeholder="Codes or instructions for the guest..."></textarea>
-                <p class="text-[10px] text-gray-400 flex items-center gap-1">
-                  <span class="material-symbols-outlined text-[12px]">info</span>
-                  Sent automatically via WhatsApp/Telegram before check-in.
-                </p>
-              </div>
-
-              <button (click)="generateArrivalMessage()"
-                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-lg text-xs font-bold hover:bg-orange-500 hover:text-white transition-all">
-                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-                Generate Welcome Message
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      }
-      @else if (activeTab() === 'Guest History') {
+      @if (activeTab() === 'Guest History') {
       <div class="animate-fade-in">
         <section
           class="bg-white dark:bg-[#1c2936] rounded-lg border border-gray-200 dark:border-[#324d67] overflow-hidden shadow-sm">
@@ -695,8 +535,165 @@
         </div>
       </div>
       }
-      @else if (activeTab() === 'Settings') {
-      <div class="animate-fade-in">
+      @else if (activeTab() === 'Settings' && editForm(); as form) {
+      <div class="animate-fade-in space-y-6">
+        <!-- Section: General Content -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Location Card -->
+          <div
+            class="md:col-span-2 bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/10 flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined">location_on</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Location & Identity</h3>
+                <p class="text-xs text-gray-500">Property name and official registration</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Internal Name</label>
+                <input type="text" id="internalName" name="internalName" [(ngModel)]="form.internalName"
+                  (ngModelChange)="onFormChange()"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Public Display
+                  Name</label>
+                <input type="text" id="publicName" name="publicName" [(ngModel)]="form.name"
+                  (ngModelChange)="onFormChange()"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+              </div>
+              <div class="sm:col-span-2 space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Official
+                  Address</label>
+                <div class="relative flex items-center gap-2">
+                  <div class="relative flex-1">
+                    <input type="text" id="officialAddress" name="officialAddress" [(ngModel)]="form.officialAddress"
+                      (ngModelChange)="onFormChange()"
+                      class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                    <span
+                      class="material-symbols-outlined absolute left-3 top-2.5 text-[20px] text-gray-400">explore</span>
+                  </div>
+                  <button (click)="openMap(form.officialAddress)"
+                    class="p-2.5 bg-gray-100 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg text-gray-500 hover:text-primary transition-colors flex-shrink-0"
+                    title="Open on Map" aria-label="Open on Map">
+                    <span class="material-symbols-outlined text-[20px]">map</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing Card -->
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/10 flex items-center justify-center text-green-600">
+                <span class="material-symbols-outlined">payments</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Base Rates</h3>
+                <p class="text-xs text-gray-500">Default fees ($)</p>
+              </div>
+            </div>
+
+            <div class="space-y-5">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Nightly Rate</label>
+                <div class="relative">
+                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
+                  <input type="number" id="basePrice" name="basePrice" [(ngModel)]="form.basePrice"
+                    (ngModelChange)="onFormChange()"
+                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Cleaning Fee</label>
+                <div class="relative">
+                  <span class="absolute left-4 top-2.5 text-gray-400 text-sm font-bold">$</span>
+                  <input type="number" id="cleaningFee" name="cleaningFee" [(ngModel)]="form.cleaningFee"
+                    (ngModelChange)="onFormChange()"
+                    class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg pl-8 pr-4 py-2.5 text-sm font-bold text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Connectivity & Access -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/10 flex items-center justify-center text-purple-600">
+                <span class="material-symbols-outlined">wifi</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Guest Connectivity</h3>
+                <p class="text-xs text-gray-500">WiFi credentials for guests</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi SSID
+                  (Name)</label>
+                <input type="text" id="wifiSsid" name="wifiSsid" [(ngModel)]="form.wifiSsid"
+                  (ngModelChange)="onFormChange()"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="e.g. MyProp_WiFi">
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">WiFi Password</label>
+                <input type="text" id="wifiPassword" name="wifiPassword" [(ngModel)]="form.wifiPassword"
+                  (ngModelChange)="onFormChange()"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm font-mono text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  placeholder="********">
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm group hover:border-primary/30 transition-colors">
+            <div class="flex items-center gap-3 mb-6">
+              <div
+                class="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/10 flex items-center justify-center text-orange-600">
+                <span class="material-symbols-outlined">key</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-[#111418] dark:text-white">Smart Access</h3>
+                <p class="text-xs text-gray-500">Door and alarm codes</p>
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <div class="space-y-1.5">
+                <label class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest">Access
+                  Instructions</label>
+                <textarea [(ngModel)]="form.accessCodes" (ngModelChange)="onFormChange()" rows="2"
+                  class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-lg px-4 py-2.5 text-sm text-[#111418] dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                  placeholder="Codes or instructions for the guest..."></textarea>
+                <p class="text-[10px] text-gray-400 flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[12px]">info</span>
+                  Sent automatically via WhatsApp/Telegram before check-in.
+                </p>
+              </div>
+
+              <button (click)="generateArrivalMessage()"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 rounded-lg text-xs font-bold hover:bg-orange-500 hover:text-white transition-all">
+                <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                Generate Welcome Message
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Danger Zone -->
         <section
           class="bg-white dark:bg-[#1c2936] rounded-lg border border-red-200 dark:border-red-900/30 overflow-hidden">

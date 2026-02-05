@@ -25,7 +25,7 @@ export class PropertiesComponent implements OnInit {
 
   importPreview = signal<PropertyGroup[] | null>(null);
   selectedUnitId = signal<string | null>('u1');
-  activeTab = signal<string>('Basic Info');
+  activeTab = signal<string>('Settings');
 
   constructor() {
     effect(() => {
@@ -299,7 +299,7 @@ export class PropertiesComponent implements OnInit {
   showCustomNameInput = signal<boolean>(false);
   editingItemId = signal<string | null>(null);
 
-  tabs = ['Basic Info', 'Guest History', 'Photos', 'Inventory', 'Finance / P&L', 'Settings'];
+  tabs = ['Guest History', 'Photos', 'Inventory', 'Finance / P&L', 'Settings'];
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
