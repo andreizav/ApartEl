@@ -88,9 +88,9 @@ export class LoginComponent implements OnInit {
       this.registerForm.markAllAsTouched();
       return;
     }
-    const { orgName, email } = this.registerForm.value;
+    const { orgName, email, password } = this.registerForm.value;
     this.isLoading.set(true);
-    this.apiService.register(orgName!, email!).pipe(tap(() => this.isLoading.set(false))).subscribe({
+    this.apiService.register(orgName!, email!, password!).pipe(tap(() => this.isLoading.set(false))).subscribe({
       next: (result) => {
         if (result.success) this.router.navigate(['/dashboard']);
         else this.errorMessage.set(result.error ?? 'Registration failed.');
@@ -104,7 +104,7 @@ export class LoginComponent implements OnInit {
 
   loginWithGoogle() {
     this.isLoading.set(true);
-    this.apiService.register('Demo Organization', 'user@gmail.com').pipe(tap(() => this.isLoading.set(false))).subscribe({
+    this.apiService.register('Demo Organization', 'user@gmail.com', 'demo-password-123').pipe(tap(() => this.isLoading.set(false))).subscribe({
       next: (r) => { if (r.success) this.router.navigate(['/dashboard']); },
       error: () => this.isLoading.set(false),
     });
@@ -112,7 +112,7 @@ export class LoginComponent implements OnInit {
 
   loginWithTelegram() {
     this.isLoading.set(true);
-    this.apiService.register('Telegram Workspace', 'tg_user@telegram.org').pipe(tap(() => this.isLoading.set(false))).subscribe({
+    this.apiService.register('Telegram Workspace', 'tg_user@telegram.org', 'tg-password-123').pipe(tap(() => this.isLoading.set(false))).subscribe({
       next: (r) => { if (r.success) this.router.navigate(['/dashboard']); },
       error: () => this.isLoading.set(false),
     });

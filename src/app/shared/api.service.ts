@@ -38,9 +38,9 @@ export class ApiService {
       );
   }
 
-  register(orgName: string, email: string): Observable<{ success: boolean; error?: string }> {
+  register(orgName: string, email: string, password: string): Observable<{ success: boolean; error?: string }> {
     return this.http
-      .post<{ token: string; user: Staff; tenant: unknown }>(`${this.apiUrl}/api/auth/register`, { orgName, email })
+      .post<{ token: string; user: Staff; tenant: unknown }>(`${this.apiUrl}/api/auth/register`, { orgName, email, password })
       .pipe(
         switchMap((res) => {
           this.tokenService.setToken(res.token);

@@ -80,7 +80,7 @@ export class SettingsService {
         const token = settings.tgBotToken;
 
         if (!token) {
-            throw new BadRequestException('Bot token not configured.');
+            return { success: false };
         }
 
         try {
