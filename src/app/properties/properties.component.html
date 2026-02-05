@@ -544,10 +544,10 @@
       @else if (activeTab() === 'Finance / P&L') {
       <div class="animate-fade-in space-y-6">
         <!-- Actions & Summary -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div class="md:col-span-3 flex items-center justify-between">
+        <div class="flex flex-col gap-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h3 class="font-bold text-[#111418] dark:text-white">Profit & Loss</h3>
-            <div class="flex items-center gap-4">
+            <div class="flex flex-wrap items-center gap-4">
               <!-- View Mode Switcher -->
               <div class="flex p-1 bg-gray-100 dark:bg-[#111a22] rounded-lg">
                 <button (click)="setViewMode('all')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
@@ -562,6 +562,23 @@
                   [class.bg-white]="pnlViewMode() === 'month'" [class.text-[#111418]]="pnlViewMode() === 'month'"
                   [class.shadow-sm]="pnlViewMode() === 'month'"
                   [class.text-gray-500]="pnlViewMode() !== 'month'">Month</button>
+              </div>
+
+              <!-- Currency Selector -->
+              <div
+                class="flex p-1 bg-gray-100 dark:bg-[#111a22] rounded-lg border border-gray-200 dark:border-[#324d67]">
+                <button (click)="setPnlCurrency('USD')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                  [class.bg-white]="pnlCurrency() === 'USD'" [class.text-green-600]="pnlCurrency() === 'USD'"
+                  [class.shadow-sm]="pnlCurrency() === 'USD'"
+                  [class.text-gray-500]="pnlCurrency() !== 'USD'">USD</button>
+                <button (click)="setPnlCurrency('UAH')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                  [class.bg-white]="pnlCurrency() === 'UAH'" [class.text-blue-600]="pnlCurrency() === 'UAH'"
+                  [class.shadow-sm]="pnlCurrency() === 'UAH'"
+                  [class.text-gray-500]="pnlCurrency() !== 'UAH'">UAH</button>
+                <button (click)="setPnlCurrency('EUR')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                  [class.bg-white]="pnlCurrency() === 'EUR'" [class.text-purple-600]="pnlCurrency() === 'EUR'"
+                  [class.shadow-sm]="pnlCurrency() === 'EUR'"
+                  [class.text-gray-500]="pnlCurrency() !== 'EUR'">EUR</button>
               </div>
 
               <!-- Date Navigation -->
@@ -591,26 +608,31 @@
           </div>
 
           <!-- Cards -->
-          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Income</p>
-            <div class="text-2xl font-bold text-green-500 flex items-center gap-2">
-              <span class="material-symbols-outlined">trending_up</span>
-              ${{ unitPnLSummary().income | number:'1.2-2' }}
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
+              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Income</p>
+              <div class="text-2xl font-bold text-green-500 flex items-center gap-2">
+                <span class="material-symbols-outlined">trending_up</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().income | number:'1.0-2' }}
+              </div>
             </div>
-          </div>
-          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Expenses</p>
-            <div class="text-2xl font-bold text-red-500 flex items-center gap-2">
-              <span class="material-symbols-outlined">trending_down</span>
-              ${{ unitPnLSummary().expense | number:'1.2-2' }}
+            <div
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
+              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Expenses</p>
+              <div class="text-2xl font-bold text-red-500 flex items-center gap-2">
+                <span class="material-symbols-outlined">trending_down</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().expense | number:'1.0-2' }}
+              </div>
             </div>
-          </div>
-          <div class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-            <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Net Profit</p>
-            <div class="text-2xl font-bold flex items-center gap-2" [class.text-green-600]="unitPnLSummary().net >= 0"
-              [class.text-red-600]="unitPnLSummary().net < 0">
-              <span class="material-symbols-outlined">account_balance_wallet</span>
-              ${{ unitPnLSummary().net | number:'1.2-2' }}
+            <div
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
+              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Net Profit</p>
+              <div class="text-2xl font-bold flex items-center gap-2" [class.text-green-600]="unitPnLSummary().net >= 0"
+                [class.text-red-600]="unitPnLSummary().net < 0">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().net | number:'1.0-2' }}
+              </div>
             </div>
           </div>
         </div>
@@ -620,7 +642,7 @@
           <div class="px-6 py-4 border-b border-gray-200 dark:border-[#324d67]">
             <h4 class="font-bold text-[#111418] dark:text-white">Recent Transactions</h4>
           </div>
-          @if (unitTransactions().length > 0) {
+          @if (processedUnitTransactions().length > 0) {
           <table class="w-full text-sm text-left">
             <thead class="text-xs text-gray-500 bg-gray-50 dark:bg-[#111a22] uppercase">
               <tr>
@@ -632,7 +654,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-[#324d67]">
-              @for(tx of unitTransactions(); track tx.id) {
+              @for(tx of processedUnitTransactions(); track tx.id) {
               <tr class="hover:bg-gray-50 dark:hover:bg-[#253545]">
                 <td class="px-6 py-4">{{ tx.date | date:'mediumDate' }}</td>
                 <td class="px-6 py-4">
@@ -647,9 +669,18 @@
                   <div class="text-xs text-gray-500">{{ tx.subCategory }}</div>
                 </td>
                 <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ tx.description }}</td>
-                <td class="px-6 py-4 text-right font-bold" [class.text-green-600]="tx.type === 'income'"
-                  [class.text-red-600]="tx.type === 'expense'">
-                  {{ tx.type === 'income' ? '+' : '-' }}${{ tx.amount | number:'1.2-2' }}
+                <td class="px-6 py-4 text-right">
+                  <div class="flex flex-col items-end">
+                    <span class="font-bold" [class.text-green-600]="tx.type === 'income'"
+                      [class.text-red-600]="tx.type === 'expense'">
+                      {{ tx.type === 'income' ? '+' : '-' }}{{ tx.convertedAmount | currency:pnlCurrency() }}
+                    </span>
+                    @if (tx.currency !== pnlCurrency()) {
+                    <span class="text-xs text-gray-400">
+                      Orig: {{ tx.amount | currency:tx.currency }}
+                    </span>
+                    }
+                  </div>
                 </td>
               </tr>
               }
@@ -995,16 +1026,29 @@
         </div>
 
         <!-- Date & Amount/Calculated Total -->
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-4">
+          <!-- Date -->
           <div class="space-y-1.5">
             <label class="text-xs font-bold text-gray-500 uppercase">Date</label>
             <input type="date" [ngModel]="txDate()" (ngModelChange)="txDate.set($event)"
               class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white">
           </div>
 
+          <!-- Currency -->
+          <div class="space-y-1.5 animate-fade-in">
+            <label class="text-xs font-bold text-gray-500 uppercase">Currency</label>
+            <select [ngModel]="txCurrency()" (ngModelChange)="txCurrency.set($event)"
+              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white">
+              <option value="USD">USD</option>
+              <option value="UAH">UAH</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+
+          <!-- Amount -->
           @if (!isInventoryCategorySelected()) {
           <div class="space-y-1.5 animate-fade-in">
-            <label class="text-xs font-bold text-gray-500 uppercase">Amount ($)</label>
+            <label class="text-xs font-bold text-gray-500 uppercase">Amount</label>
             <input type="number" [ngModel]="txAmount()" (ngModelChange)="txAmount.set($event)"
               class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white"
               min="0">
@@ -1014,7 +1058,7 @@
             <label class="text-xs font-bold text-gray-500 uppercase">Total Amount</label>
             <div
               class="flex items-center w-full bg-gray-100 dark:bg-[#1b252f] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white font-bold opacity-75 h-[38px]">
-              {{ calculatedAmount() | currency }}
+              {{ calculatedAmount() | currency:txCurrency() }}
             </div>
           </div>
           }
