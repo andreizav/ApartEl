@@ -15,13 +15,15 @@
     <div class="flex flex-col rounded-2xl bg-white dark:bg-[#1c2936] shadow-xl border border-gray-100 dark:border-[#324d67] overflow-hidden">
       
       <!-- Mode Tabs -->
-      <div class="flex border-b border-gray-100 dark:border-[#324d67]">
+      <div class="flex border-b border-gray-100 dark:border-[#324d67]" role="tablist">
         <button 
           (click)="setMode('login')"
           class="flex-1 py-4 text-sm font-bold transition-all relative"
           [class.text-primary]="authMode() === 'login'"
           [class.text-gray-500]="authMode() !== 'login'"
           [class.dark:text-gray-400]="authMode() !== 'login'"
+          role="tab"
+          [attr.aria-selected]="authMode() === 'login'"
         >
           Log In
           @if (authMode() === 'login') {
@@ -34,6 +36,8 @@
           [class.text-primary]="authMode() === 'register'"
           [class.text-gray-500]="authMode() !== 'register'"
           [class.dark:text-gray-400]="authMode() !== 'register'"
+          role="tab"
+          [attr.aria-selected]="authMode() === 'register'"
         >
           Create Account
           @if (authMode() === 'register') {
@@ -116,6 +120,7 @@
                 [attr.aria-invalid]="loginEmailError ? 'true' : null"
                 placeholder="name@company.com" 
                 type="email"
+                required
               />
             </div>
 
@@ -135,6 +140,7 @@
                   [attr.aria-invalid]="loginPassError ? 'true' : null"
                   [type]="showPassword() ? 'text' : 'password'"
                   placeholder="••••••••"
+                  required
                 />
                 <button 
                   type="button"
@@ -193,6 +199,7 @@
                 [attr.aria-invalid]="regOrgError ? 'true' : null"
                 placeholder="e.g. Acme Properties LLC" 
                 type="text"
+                required
               />
               <p class="text-[10px] text-gray-400">This will create your new workspace (Tenant).</p>
             </div>
@@ -209,6 +216,7 @@
                 [attr.aria-invalid]="regEmailError ? 'true' : null"
                 placeholder="name@company.com" 
                 type="email"
+                required
               />
             </div>
 
@@ -225,6 +233,7 @@
                   [attr.aria-invalid]="regPassError ? 'true' : null"
                   [type]="showPassword() ? 'text' : 'password'"
                   placeholder="Min 6 characters"
+                  required
                 />
                 <button 
                   type="button"
@@ -259,7 +268,7 @@
       <!-- Footer (Terms) -->
       <div class="bg-gray-50 dark:bg-[#18232e] py-4 px-8 text-center border-t border-gray-100 dark:border-[#324d67]">
         <p class="text-[10px] text-gray-500 dark:text-gray-400">
-          By continuing, you agree to our <a class="underline hover:text-primary cursor-pointer">Terms of Service</a> and <a class="underline hover:text-primary cursor-pointer">Privacy Policy</a>.
+          By continuing, you agree to our <button type="button" class="underline hover:text-primary cursor-pointer bg-transparent border-0 p-0 inline align-baseline">Terms of Service</button> and <button type="button" class="underline hover:text-primary cursor-pointer bg-transparent border-0 p-0 inline align-baseline">Privacy Policy</button>.
         </p>
       </div>
     </div>
