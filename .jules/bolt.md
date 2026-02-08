@@ -19,3 +19,7 @@
 ## 2026-02-05 - [Virtualization & Render Models]
 **Learning:** Calling methods like `getBookingStyle()` inside template loops (`@for`) re-executes on every change detection cycle and often creates throwaway objects (`new Date`), increasing GC pressure.
 **Action:** Use computed signals to pre-calculate a "Render Model" (including styles and classes) and filter out off-screen items ("virtualization") before the template iterates.
+
+## 2026-02-06 - [Range Query Indexing]
+**Learning:** Overlap checks (e.g. `start < B_end AND end > B_start`) are O(N) without proper indexing. Single-column indexes on date fields are insufficient for optimizing range intersections.
+**Action:** Use composite indexes like `@@index([unitId, startDate, endDate])` to allow the database to efficient filter by the equality constraint (`unitId`) and then range scan the dates. Also index sort fields like `@@index([tenantId, date])` to avoid in-memory sorting.
