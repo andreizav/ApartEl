@@ -19,3 +19,7 @@
 ## 2026-02-05 - [Virtualization & Render Models]
 **Learning:** Calling methods like `getBookingStyle()` inside template loops (`@for`) re-executes on every change detection cycle and often creates throwaway objects (`new Date`), increasing GC pressure.
 **Action:** Use computed signals to pre-calculate a "Render Model" (including styles and classes) and filter out off-screen items ("virtualization") before the template iterates.
+
+## 2026-02-06 - [Backend Pagination & Filtering]
+**Learning:** Backend methods like `findAll(tenantId)` fetch all historical records without date filtering, creating a "Select All" scalability issue as data grows.
+**Action:** Always implement date range filtering or pagination for list endpoints, especially for time-series data like bookings and transactions.
