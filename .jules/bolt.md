@@ -19,3 +19,7 @@
 ## 2026-02-05 - [Virtualization & Render Models]
 **Learning:** Calling methods like `getBookingStyle()` inside template loops (`@for`) re-executes on every change detection cycle and often creates throwaway objects (`new Date`), increasing GC pressure.
 **Action:** Use computed signals to pre-calculate a "Render Model" (including styles and classes) and filter out off-screen items ("virtualization") before the template iterates.
+
+## 2026-02-06 - [Prisma Sort Optimization]
+**Learning:** Using `orderBy` in Prisma queries (e.g., `orderBy: { date: 'desc' }`) without a covering index forces the database to perform an in-memory sort after filtering, which is O(N log N).
+**Action:** Add composite indexes that include the sort column (e.g., `@@index([tenantId, date])`) to allow the database to retrieve pre-sorted results directly from the index (O(N)).
