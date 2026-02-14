@@ -34,8 +34,9 @@ COPY --from=backend-build /app/server-nest/dist ./server-nest/dist
 COPY --from=backend-build /app/server-nest/node_modules ./server-nest/node_modules
 COPY --from=backend-build /app/server-nest/package.json ./server-nest/package.json
 
-# Copy Prisma schema + generated client
+# Copy Prisma schema + generated client + config
 COPY --from=backend-build /app/server-nest/prisma ./server-nest/prisma
+COPY --from=backend-build /app/server-nest/prisma.config.ts ./server-nest/prisma.config.ts
 
 WORKDIR /app/server-nest
 
@@ -50,4 +51,4 @@ ENV DATABASE_URL="file:/data/prod.db"
 EXPOSE 4000
 
 # Apply schema + start server
-CMD ["sh", "-c", "npx prisma db push --accept-data-loss && node dist/main"]
+CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/main"]
