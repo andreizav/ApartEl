@@ -86,79 +86,68 @@
     class="flex-1 flex flex-col bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] overflow-hidden">
 
     <!-- Top Header -->
-    <div class="px-6 pt-6 pb-0">
-      <div class="flex items-start justify-between mb-2">
-        <div class="flex flex-col gap-1">
-          <div class="flex items-center gap-3">
-            <h1 class="text-2xl font-bold text-[#111418] dark:text-white">{{ unit.name }}</h1>
-            <span
-              class="px-2 py-0.5 bg-[#253545] border border-[#324d67] text-[#92adc9] text-[10px] font-bold uppercase tracking-wider rounded">Rentable
-              Unit</span>
+    <div class="px-4 pt-3 pb-0">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <h1 class="text-lg font-bold text-[#111418] dark:text-white truncate">{{ unit.name }}</h1>
+          <span
+            class="px-1.5 py-0.5 bg-[#253545] border border-[#324d67] text-[#92adc9] text-[9px] font-bold uppercase tracking-wider rounded flex-shrink-0">Unit</span>
+          <span class="text-[10px] text-gray-400 font-mono hidden md:inline flex-shrink-0">{{ unit.id }}</span>
 
-            <!-- Compact Stats Indicators -->
-            <div
-              class="flex items-center gap-4 ml-4 px-4 py-1.5 bg-gray-50/50 dark:bg-[#111a22]/50 rounded-full border border-gray-100 dark:border-[#324d67]/50">
-              <!-- Next Departure/Arrival -->
-              <div class="flex items-center gap-1.5" title="Next Arrival">
-                <span class="material-symbols-outlined text-[16px] text-primary">event_upcoming</span>
-                <span class="text-xs font-bold text-[#111418] dark:text-white">{{ nextCheckIn() !== null ? nextCheckIn()
-                  : '--' }}d</span>
-              </div>
-
-              <!-- Occupancy -->
-              <div class="flex items-center gap-1.5" title="Occupancy (30d)">
-                <span class="material-symbols-outlined text-[16px] text-green-500">analytics</span>
-                <span class="text-xs font-bold text-[#111418] dark:text-white">{{ occupancyRate() | number:'1.0-0'
-                  }}%</span>
-              </div>
-
-              <!-- ADR -->
-              <div class="flex items-center gap-1.5" title="Average Daily Rate">
-                <span class="material-symbols-outlined text-[16px] text-indigo-500">payments</span>
-                <span class="text-xs font-bold text-[#111418] dark:text-white">${{ averageDailyRate() | number:'1.0-0'
-                  }}</span>
-              </div>
-
-              <!-- ALOS -->
-              <div class="flex items-center gap-1.5" title="Average Length of Stay">
-                <span class="material-symbols-outlined text-[16px] text-amber-500">nightlight</span>
-                <span class="text-xs font-bold text-[#111418] dark:text-white">{{ averageLengthOfStay() | number:'1.1-1'
-                  }}</span>
-              </div>
-
-              <!-- Monthly Revenue -->
-              <div class="flex items-center gap-1.5" title="Monthly Revenue">
-                <span class="material-symbols-outlined text-[16px] text-primary">trending_up</span>
-                <span class="text-xs font-bold text-primary">${{ monthlyRevenue() | number:'1.0-0' }}</span>
-              </div>
+          <!-- Compact Stats Indicators -->
+          <div
+            class="hidden lg:flex items-center gap-3 ml-2 px-3 py-1 bg-gray-50/50 dark:bg-[#111a22]/50 rounded-full border border-gray-100 dark:border-[#324d67]/50">
+            <div class="flex items-center gap-1" title="Next Arrival">
+              <span class="material-symbols-outlined text-[14px] text-primary">event_upcoming</span>
+              <span class="text-[11px] font-bold text-[#111418] dark:text-white">{{ nextCheckIn() !== null ?
+                nextCheckIn() : '--' }}d</span>
+            </div>
+            <div class="flex items-center gap-1" title="Occupancy (30d)">
+              <span class="material-symbols-outlined text-[14px] text-green-500">analytics</span>
+              <span class="text-[11px] font-bold text-[#111418] dark:text-white">{{ occupancyRate() | number:'1.0-0'
+                }}%</span>
+            </div>
+            <div class="flex items-center gap-1" title="Average Daily Rate">
+              <span class="material-symbols-outlined text-[14px] text-indigo-500">payments</span>
+              <span class="text-[11px] font-bold text-[#111418] dark:text-white">${{ averageDailyRate() | number:'1.0-0'
+                }}</span>
+            </div>
+            <div class="flex items-center gap-1" title="Average Length of Stay">
+              <span class="material-symbols-outlined text-[14px] text-amber-500">nightlight</span>
+              <span class="text-[11px] font-bold text-[#111418] dark:text-white">{{ averageLengthOfStay() |
+                number:'1.1-1' }}</span>
+            </div>
+            <div class="flex items-center gap-1" title="Monthly Revenue">
+              <span class="material-symbols-outlined text-[14px] text-primary">trending_up</span>
+              <span class="text-[11px] font-bold text-primary">${{ monthlyRevenue() | number:'1.0-0' }}</span>
             </div>
           </div>
-          <div class="text-xs text-gray-400 font-mono italic">ID: {{ unit.id }}</div>
         </div>
 
         <!-- Actions -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <!-- Status Toggle -->
-          <div class="flex bg-gray-100 dark:bg-[#111a22] rounded-full p-1 border border-gray-200 dark:border-[#324d67]">
-            <button class="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
+          <div
+            class="flex bg-gray-100 dark:bg-[#111a22] rounded-full p-0.5 border border-gray-200 dark:border-[#324d67]">
+            <button class="px-3 py-1 rounded-full text-[11px] font-bold transition-all"
               [class.bg-green-500]="unit.status === 'Active'" [class.text-white]="unit.status === 'Active'"
               [class.text-gray-500]="unit.status !== 'Active'" (click)="updateUnitStatus(unit.id, 'Active')">
               Active
             </button>
-            <button class="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
+            <button class="px-3 py-1 rounded-full text-[11px] font-bold transition-all"
               [class.bg-gray-400]="unit.status === 'Maintenance'" [class.text-white]="unit.status === 'Maintenance'"
               [class.text-gray-500]="unit.status !== 'Maintenance'" (click)="updateUnitStatus(unit.id, 'Maintenance')">
-              Maintenance
+              Maint.
             </button>
           </div>
 
           @if (isDirty()) {
           <button (click)="saveUnitInfo()" [disabled]="isSaving()"
-            class="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50">
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors shadow-sm shadow-primary/25 disabled:opacity-50">
             @if (isSaving()) {
-            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            <span class="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
             } @else {
-            <span class="material-symbols-outlined text-[18px]">save</span>
+            <span class="material-symbols-outlined text-[16px]">save</span>
             }
             Save
           </button>
@@ -167,9 +156,9 @@
       </div>
 
       <!-- Tabs -->
-      <div class="flex gap-6 border-b border-gray-200 dark:border-[#324d67] overflow-x-auto">
+      <div class="flex gap-4 border-b border-gray-200 dark:border-[#324d67] overflow-x-auto no-scrollbar">
         @for (tab of tabs; track tab) {
-        <button class="pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap"
+        <button class="pb-2 text-xs font-bold transition-all border-b-2 whitespace-nowrap"
           [class.text-primary]="activeTab() === tab" [class.border-primary]="activeTab() === tab"
           [class.text-gray-500]="activeTab() !== tab" [class.border-transparent]="activeTab() !== tab"
           [class.hover:text-gray-700]="activeTab() !== tab" [class.dark:hover:text-gray-300]="activeTab() !== tab"
@@ -181,7 +170,7 @@
     </div>
 
     <!-- Scrollable Content Area -->
-    <div class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 dark:bg-[#111a22]/30">
+    <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-[#111a22]/30">
 
       @if (activeTab() === 'Guest History') {
       <div class="animate-fade-in">
@@ -326,10 +315,10 @@
       @else if (activeTab() === 'Inventory') {
       <div class="animate-fade-in space-y-6">
         <div class="flex items-center justify-between">
-          <h3 class="font-bold text-[#111418] dark:text-white">Unit Inventory</h3>
+          <h3 class="text-sm font-bold text-[#111418] dark:text-white">Unit Inventory</h3>
           <button (click)="openInventoryModal()"
-            class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25">
-            <span class="material-symbols-outlined text-[18px]">add</span>
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm shadow-primary/25">
+            <span class="material-symbols-outlined text-[16px]">add</span>
             Add Item
           </button>
         </div>
@@ -385,20 +374,20 @@
       <div class="animate-fade-in space-y-6">
         <!-- Actions & Summary -->
         <div class="flex flex-col gap-6">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <h3 class="font-bold text-[#111418] dark:text-white">Profit & Loss</h3>
-            <div class="flex flex-wrap items-center gap-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <h3 class="text-sm font-bold text-[#111418] dark:text-white">Profit & Loss</h3>
+            <div class="flex flex-wrap items-center gap-1.5">
               <!-- View Mode Switcher -->
-              <div class="flex p-1 bg-gray-100 dark:bg-[#111a22] rounded-lg">
-                <button (click)="setViewMode('all')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+              <div class="flex p-0.5 bg-gray-100 dark:bg-[#111a22] rounded-lg">
+                <button (click)="setViewMode('all')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlViewMode() === 'all'" [class.text-[#111418]]="pnlViewMode() === 'all'"
                   [class.shadow-sm]="pnlViewMode() === 'all'"
                   [class.text-gray-500]="pnlViewMode() !== 'all'">All</button>
-                <button (click)="setViewMode('year')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                <button (click)="setViewMode('year')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlViewMode() === 'year'" [class.text-[#111418]]="pnlViewMode() === 'year'"
                   [class.shadow-sm]="pnlViewMode() === 'year'"
                   [class.text-gray-500]="pnlViewMode() !== 'year'">Year</button>
-                <button (click)="setViewMode('month')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                <button (click)="setViewMode('month')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlViewMode() === 'month'" [class.text-[#111418]]="pnlViewMode() === 'month'"
                   [class.shadow-sm]="pnlViewMode() === 'month'"
                   [class.text-gray-500]="pnlViewMode() !== 'month'">Month</button>
@@ -406,16 +395,16 @@
 
               <!-- Currency Selector -->
               <div
-                class="flex p-1 bg-gray-100 dark:bg-[#111a22] rounded-lg border border-gray-200 dark:border-[#324d67]">
-                <button (click)="setPnlCurrency('USD')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                class="flex p-0.5 bg-gray-100 dark:bg-[#111a22] rounded-lg border border-gray-200 dark:border-[#324d67]">
+                <button (click)="setPnlCurrency('USD')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlCurrency() === 'USD'" [class.text-green-600]="pnlCurrency() === 'USD'"
                   [class.shadow-sm]="pnlCurrency() === 'USD'"
                   [class.text-gray-500]="pnlCurrency() !== 'USD'">USD</button>
-                <button (click)="setPnlCurrency('UAH')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                <button (click)="setPnlCurrency('UAH')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlCurrency() === 'UAH'" [class.text-blue-600]="pnlCurrency() === 'UAH'"
                   [class.shadow-sm]="pnlCurrency() === 'UAH'"
                   [class.text-gray-500]="pnlCurrency() !== 'UAH'">UAH</button>
-                <button (click)="setPnlCurrency('EUR')" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all"
+                <button (click)="setPnlCurrency('EUR')" class="px-2.5 py-1 text-xs font-bold rounded-md transition-all"
                   [class.bg-white]="pnlCurrency() === 'EUR'" [class.text-purple-600]="pnlCurrency() === 'EUR'"
                   [class.shadow-sm]="pnlCurrency() === 'EUR'"
                   [class.text-gray-500]="pnlCurrency() !== 'EUR'">EUR</button>
@@ -424,54 +413,54 @@
               <!-- Date Navigation -->
               @if(pnlViewMode() !== 'all') {
               <div
-                class="flex items-center gap-2 bg-white dark:bg-[#1c2936] border border-gray-200 dark:border-[#324d67] rounded-lg p-1">
+                class="flex items-center bg-white dark:bg-[#1c2936] border border-gray-200 dark:border-[#324d67] rounded-lg p-0.5">
                 <button (click)="prevPeriod()"
-                  class="p-1 hover:bg-gray-100 dark:hover:bg-[#253545] rounded text-gray-500">
-                  <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                  class="w-7 h-7 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#253545] rounded-md text-gray-500">
+                  <span class="material-symbols-outlined text-[16px]">chevron_left</span>
                 </button>
-                <span class="text-sm font-bold min-w-[100px] text-center text-[#111418] dark:text-white">{{
+                <span class="text-xs font-bold min-w-[80px] text-center text-[#111418] dark:text-white">{{
                   pnlPeriodLabel() }}</span>
                 <button (click)="nextPeriod()"
-                  class="p-1 hover:bg-gray-100 dark:hover:bg-[#253545] rounded text-gray-500">
-                  <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                  class="w-7 h-7 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-[#253545] rounded-md text-gray-500">
+                  <span class="material-symbols-outlined text-[16px]">chevron_right</span>
                 </button>
               </div>
               }
 
               <!-- Add Entry Button -->
               <button (click)="openTransactionModal()"
-                class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-primary/25">
-                <span class="material-symbols-outlined text-[18px]">add</span>
+                class="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-sm shadow-primary/25">
+                <span class="material-symbols-outlined text-[16px]">add</span>
                 Add Entry
               </button>
             </div>
           </div>
 
           <!-- Cards -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="grid grid-cols-3 gap-3">
             <div
-              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Income</p>
-              <div class="text-2xl font-bold text-green-500 flex items-center gap-2">
-                <span class="material-symbols-outlined">trending_up</span>
-                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().income | number:'1.0-2' }}
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-4 shadow-sm">
+              <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">Income</p>
+              <div class="text-lg font-bold text-green-500 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[20px]">trending_up</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().income | number:'1.0-0' }}
               </div>
             </div>
             <div
-              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Total Expenses</p>
-              <div class="text-2xl font-bold text-red-500 flex items-center gap-2">
-                <span class="material-symbols-outlined">trending_down</span>
-                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().expense | number:'1.0-2' }}
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-4 shadow-sm">
+              <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">Expenses</p>
+              <div class="text-lg font-bold text-red-500 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[20px]">trending_down</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().expense | number:'1.0-0' }}
               </div>
             </div>
             <div
-              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-6 shadow-sm">
-              <p class="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2">Net Profit</p>
-              <div class="text-2xl font-bold flex items-center gap-2" [class.text-green-600]="unitPnLSummary().net >= 0"
-                [class.text-red-600]="unitPnLSummary().net < 0">
-                <span class="material-symbols-outlined">account_balance_wallet</span>
-                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().net | number:'1.0-2' }}
+              class="bg-white dark:bg-[#1c2936] rounded-xl border border-gray-200 dark:border-[#324d67] p-4 shadow-sm">
+              <p class="text-gray-500 text-[10px] font-bold uppercase tracking-wider mb-1">Net Profit</p>
+              <div class="text-lg font-bold flex items-center gap-1.5"
+                [class.text-green-600]="unitPnLSummary().net >= 0" [class.text-red-600]="unitPnLSummary().net < 0">
+                <span class="material-symbols-outlined text-[20px]">account_balance_wallet</span>
+                {{ getCurrencySymbol(pnlCurrency()) }}{{ unitPnLSummary().net | number:'1.0-0' }}
               </div>
             </div>
           </div>
