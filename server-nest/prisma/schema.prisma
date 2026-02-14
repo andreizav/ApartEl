@@ -122,6 +122,7 @@ model Booking {
 
   @@index([tenantId])
   @@index([unitId])
+  @@index([unitId, startDate, endDate])
 }
 
 model Client {
@@ -147,6 +148,8 @@ model Client {
   messages         Message[]
 
   @@index([tenantId])
+  @@index([tenantId, phoneNumber])
+  @@index([tenantId, platformId])
 }
 
 model Message {
@@ -164,6 +167,7 @@ model Message {
   attachment String?
 
   @@index([clientId])
+  @@index([clientId, timestamp])
 }
 
 model Transaction {
@@ -186,6 +190,8 @@ model Transaction {
 
   @@index([tenantId])
   @@index([unitId])
+  @@index([tenantId, date])
+  @@index([bookingId])
 }
 
 model TransactionCategory {
