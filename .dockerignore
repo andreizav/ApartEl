@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+.npm
+
+# Build artifacts
+dist
+.angular
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database (will be mounted as volume)
+server-nest/prisma/*.db
+server-nest/prisma/*.db-journal
+
+# Git
+.git
+.gitignore
+
+# Misc
+.Jules
+*.md
