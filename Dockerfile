@@ -57,4 +57,16 @@ ENV DATABASE_URL="file:/data/prod.db"
 EXPOSE 4000
 
 # Apply schema + start server
-CMD ["sh", "-c", "npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss && node dist/src/main"]
+CMD ["sh", "-c", "\
+    echo '=== ApartEl Production Start ===' && \
+    echo \"NODE_ENV=$NODE_ENV\" && \
+    echo \"PORT=$PORT\" && \
+    echo \"DATABASE_URL=$DATABASE_URL\" && \
+    echo 'Files in dist/src:' && ls dist/src/main* 2>&1 && \
+    echo 'Prisma schema:' && ls prisma/schema.prisma 2>&1 && \
+    echo 'Data dir:' && ls -la /data/ 2>&1 && \
+    echo '=== Running prisma db push ===' && \
+    npx prisma db push --schema=./prisma/schema.prisma --accept-data-loss 2>&1 && \
+    echo '=== Starting NestJS ===' && \
+    node dist/src/main 2>&1 \
+    "]
