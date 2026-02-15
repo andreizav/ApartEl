@@ -98,6 +98,9 @@ model Unit {
   inventory        InventoryItem[]
   transactions     Transaction[]
 
+  airbnbListingId   String?
+  bookingListingId  String?
+
   @@index([groupId])
 }
 

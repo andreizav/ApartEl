@@ -60,6 +60,8 @@ export class PortfolioService {
                             accessCodes: u.accessCodes,
                             status: u.status ?? 'Active',
                             assignedCleanerId: u.assignedCleanerId,
+                            airbnbListingId: u.airbnbListingId,
+                            bookingListingId: u.bookingListingId,
                             photos: u.photos ? JSON.stringify(u.photos) : '[]'
                         },
                         create: {
@@ -75,6 +77,8 @@ export class PortfolioService {
                             accessCodes: u.accessCodes,
                             status: u.status ?? 'Active',
                             assignedCleanerId: u.assignedCleanerId,
+                            airbnbListingId: u.airbnbListingId,
+                            bookingListingId: u.bookingListingId,
                             photos: u.photos ? JSON.stringify(u.photos) : '[]'
                         }
                     });
