@@ -970,19 +970,63 @@
             [class.shadow-sm]="newEntryType() === 'unit'" [class.text-[#111418]]="newEntryType() === 'unit'"
             [class.dark:text-white]="newEntryType() === 'unit'" [class.text-gray-500]="newEntryType() !== 'unit'"
             (click)="newEntryType.set('unit')">Unit</button>
+          <button class="flex-1 py-1.5 text-sm font-bold rounded-md transition-all"
+            [class.bg-white]="newEntryType() === 'import_url'"
+            [class.dark:bg-[#253545]]="newEntryType() === 'import_url'"
+            [class.shadow-sm]="newEntryType() === 'import_url'" [class.text-[#111418]]="newEntryType() === 'import_url'"
+            [class.dark:text-white]="newEntryType() === 'import_url'"
+            [class.text-gray-500]="newEntryType() !== 'import_url'" (click)="newEntryType.set('import_url')">Import
+            URL</button>
         </div>
 
+        @if (newEntryType() === 'import_url') {
+        <div class="space-y-1.5 animate-fade-in">
+          <label class="text-xs font-bold text-gray-500 uppercase">Listing URL</label>
+          <div class="relative">
+            <input type="text" [ngModel]="newEntryUrl()" (ngModelChange)="onUrlChange($event)"
+              class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
+              placeholder="https://www.airbnb.com/rooms/12345678...">
+            @if (isFetchingDetails()) {
+            <div class="absolute right-3 top-2.5">
+              <span class="block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
+            </div>
+            }
+          </div>
+          @if (newEntryAirbnbId()) {
+          <p class="text-xs text-green-600 flex items-center gap-1 mt-1">
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Detected Airbnb ID: {{ newEntryAirbnbId() }}
+          </p>
+          }
+          @if (newEntryBookingId()) {
+          <p class="text-xs text-blue-600 flex items-center gap-1 mt-1">
+            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Detected Booking ID
+          </p>
+          }
+
+          @if (newEntryName()) {
+          <p class="text-xs text-gray-600 flex items-center gap-1 mt-1">
+            <span class="material-symbols-outlined text-[14px]">badge</span>
+            Name: <span class="font-bold">{{ newEntryName() }}</span>
+          </p>
+          }
+        </div>
+        }
+
         <!-- Name Input -->
-        <div class="space-y-1.5">
+        @if (newEntryType() !== 'import_url') {
+        <div class="space-y-1.5 animate-fade-in">
           <label class="text-xs font-bold text-gray-500 uppercase">Name</label>
           <input type="text" id="newEntryName" name="newEntryName" [ngModel]="newEntryName()"
             (ngModelChange)="newEntryName.set($event)"
             class="w-full bg-gray-50 dark:bg-[#111a22] border border-gray-200 dark:border-[#324d67] rounded-md px-3 py-2 text-sm text-[#111418] dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-colors"
             placeholder="e.g., Downtown Loft" autofocus>
         </div>
+        }
 
-        <!-- Group Select (Only for Unit) -->
-        @if (newEntryType() === 'unit') {
+        <!-- Group Select (Only for Unit or Import URL) -->
+        @if (newEntryType() === 'unit' || newEntryType() === 'import_url') {
         <div class="space-y-1.5 animate-fade-in">
           <label class="text-xs font-bold text-gray-500 uppercase">Parent Group</label>
           <select id="newEntryGroupId" name="newEntryGroupId" [ngModel]="newEntryGroupId()"

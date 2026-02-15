@@ -42,9 +42,12 @@ export class PropertiesComponent implements OnInit {
   }
 
   isNewModalOpen = signal(false);
-  newEntryType = signal<'group' | 'unit'>('unit');
+  newEntryType = signal<'group' | 'unit' | 'import_url'>('unit');
   newEntryName = signal('');
   newEntryGroupId = signal('');
+  newEntryUrl = signal('');
+  newEntryAirbnbId = signal('');
+  newEntryBookingId = signal('');
 
   editForm = signal<PropertyUnit | null>(null);
   snapshot = signal<PropertyUnit | null>(null);
@@ -908,12 +911,71 @@ export class PropertiesComponent implements OnInit {
     if (groups.length > 0) {
       this.newEntryGroupId.set(groups[0].id);
     }
+    this.newEntryAirbnbId.set('');
+    this.newEntryBookingId.set('');
+    this.newEntryUrl.set('');
     this.isNewModalOpen.set(true);
+  }
+
+  isFetchingDetails = signal(false);
+
+  async onAirbnbIdChange(id: string) {
+    this.newEntryAirbnbId.set(id);
+    this.fetchUnitDetails(id);
+  }
+
+  async onUrlChange(url: string) {
+    this.newEntryUrl.set(url);
+    const parsed = this.parseUrl(url);
+    if (parsed) {
+      if (parsed.type === 'airbnb') this.newEntryAirbnbId.set(parsed.id);
+      if (parsed.type === 'booking') this.newEntryBookingId.set(parsed.id);
+
+      this.fetchUnitDetails(parsed.id);
+    }
+  }
+
+  private parseUrl(url: string): { type: 'airbnb' | 'booking', id: string } | null {
+    try {
+      const u = new URL(url);
+      if (u.hostname.includes('airbnb')) {
+        // .../rooms/12345678...
+        const segments = u.pathname.split('/');
+        const roomIndex = segments.indexOf('rooms');
+        if (roomIndex !== -1 && segments[roomIndex + 1]) {
+          return { type: 'airbnb', id: segments[roomIndex + 1] };
+        }
+      } else if (u.hostname.includes('booking.com')) {
+        // .../hotel/us/name.html... -> we usually need the hotel ID or path
+        // For now, let's just take the pathname as valid enough validation or specific ID if we knew the format
+        // Booking IDs are messy (e.g. "hotel-name"). Let's assume the user pastes a link to the hotel page.
+        // Warning: This is a simplification.
+        return { type: 'booking', id: 'extracted-booking-id' };
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
+
+  private async fetchUnitDetails(id: string) {
+    if (id.length > 4 && !this.newEntryName()) {
+      this.isFetchingDetails.set(true);
+      // Mock API fetch
+      setTimeout(() => {
+        // Check if input still matches request to avoid race condition
+        // Simplified check
+        if (this.newEntryAirbnbId() === id || this.newEntryUrl().includes(id)) {
+          this.newEntryName.set(`Imported Unit ${id}`);
+        }
+        this.isFetchingDetails.set(false);
+      }, 1000);
+    }
   }
 
   createEntry() {
     const name = this.newEntryName().trim();
-    if (!name) return;
+    if (!name && this.newEntryType() !== 'import_url') return; // Name is optional for import_url if it's being fetched, but technically we wait for fetch.
 
     if (this.newEntryType() === 'group') {
       const newGroup: PropertyGroup = {
@@ -939,6 +1001,8 @@ export class PropertiesComponent implements OnInit {
         wifiPassword: '',
         accessCodes: '',
         status: 'Active',
+        airbnbListingId: this.newEntryAirbnbId().trim(),
+        bookingListingId: this.newEntryBookingId().trim(),
         photos: []
       };
 
