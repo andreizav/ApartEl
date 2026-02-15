@@ -125,6 +125,7 @@ model Booking {
 
   @@index([tenantId])
   @@index([unitId])
+  @@index([unitId, startDate, endDate])
 }
 
 model Client {
@@ -189,6 +190,7 @@ model Transaction {
 
   @@index([tenantId])
   @@index([unitId])
+  @@index([tenantId, date])
 }
 
 model TransactionCategory {
