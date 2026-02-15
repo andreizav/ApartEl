@@ -1,0 +1,3 @@
+## 2025-01-28 - Composite Indexes for Range Queries in SQLite
+**Learning:** SQLite (and by extension Prisma with SQLite) does not automatically optimize range queries combined with equality filters (e.g., finding overlapping bookings for a unit). A simple index on the foreign key (e.g., `unitId`) is insufficient for performance when filtering by date ranges.
+**Action:** Always add explicit composite indexes for frequently queried patterns involving equality and range checks (e.g., `@@index([unitId, startDate, endDate])` for booking overlaps) and for sorted filtering (e.g., `@@index([tenantId, date])` for transactions).
