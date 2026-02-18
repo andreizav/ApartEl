@@ -124,7 +124,8 @@ model Booking {
   description       String?
 
   @@index([tenantId])
-  @@index([unitId])
+  // Optimization: Composite index for efficient overlap checks (unitId, status, date range)
+  @@index([unitId, status, startDate, endDate])
 }
 
 model Client {
@@ -187,7 +188,8 @@ model Transaction {
   unit        Unit?    @relation(fields: [unitId], references: [id])
   bookingId   String?  // Reference to Booking ID without foreign key constraint for simplicity, or we can add it if Booking is deleted carefully
 
-  @@index([tenantId])
+  // Optimization: Index for efficient sorting by date within a tenant
+  @@index([tenantId, date])
   @@index([unitId])
 }
 
