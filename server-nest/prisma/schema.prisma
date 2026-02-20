@@ -189,6 +189,7 @@ model Transaction {
 
   @@index([tenantId])
   @@index([unitId])
+  @@index([tenantId, date])
 }
 
 model TransactionCategory {
