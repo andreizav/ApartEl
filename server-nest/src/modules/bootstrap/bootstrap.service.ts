@@ -48,22 +48,16 @@ export class BootstrapService {
         });
 
         // Get channel mappings and ical connections from units
-        const channelMappings: any[] = [];
-        const icalConnections: any[] = [];
+        const allUnits = groups.flatMap(g => g.units);
+        const unitIds = allUnits.map(u => u.id);
 
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
+        const channelMappings = await this.prisma.channelMapping.findMany({
+            where: { unitId: { in: unitIds } }
+        });
 
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
-        }
+        const icalConnections = await this.prisma.icalConnection.findMany({
+            where: { unitId: { in: unitIds } }
+        });
 
         // Get tenant settings
         const tenantData = await this.prisma.tenant.findUnique({
