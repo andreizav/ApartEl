@@ -124,7 +124,7 @@ model Booking {
   description       String?
 
   @@index([tenantId])
-  @@index([unitId])
+  @@index([unitId, status, startDate, endDate])
 }
 
 model Client {
