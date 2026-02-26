@@ -10,8 +10,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://localhost:4200', 'http://localhost:4000'],
-    credentials: true
+    origin: process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',')
+      : [
+          'http://localhost:3000',
+          'http://localhost:4200',
+          'http://localhost:4000',
+        ],
+    credentials: true,
   });
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
