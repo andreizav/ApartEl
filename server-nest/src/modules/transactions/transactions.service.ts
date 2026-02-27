@@ -136,29 +136,32 @@ export class TransactionsService {
             }
         });
 
-        const createdTransactions: any[] = [];
         const existingBookingIds = new Set(transactions.map(t => t.bookingId));
+        const bookingsToSync = bookings.filter(b => !existingBookingIds.has(b.id));
 
-        // 3. Create transactions for missing bookings
-        for (const booking of bookings) {
-            if (!existingBookingIds.has(booking.id)) {
-                // Determine category - ideally should be dynamic, but defaulting to 'Rental Income' or creating it
-                // For simplicity, we'll use a string literal 'Rental Income' as category
-                const tx = await this.create(tenantId, {
-                    date: booking.startDate.toISOString(),
-                    type: 'income',
+        // 3. Create transactions for missing bookings in a batch transaction
+        // Use $transaction to ensure atomicity and reduce database round-trips
+        const txPromises = bookingsToSync.map((booking, index) => {
+            return this.prisma.transaction.create({
+                data: {
+                    // Generate unique ID with index and random component to prevent collision in batch
+                    id: `tx-${Date.now()}-${index}-${Math.floor(Math.random() * 1000)}`,
+                    tenantId,
+                    date: booking.startDate,
+                    property: 'Unit Specific',
                     category: 'Rental Income',
                     subCategory: booking.source, // e.g. Airbnb, Booking.com
                     description: `Booking Income: ${booking.guestName} (${booking.source})`,
                     amount: booking.price,
                     currency: 'USD', // Default
-                    property: 'Unit Specific',
+                    type: 'income',
                     unitId: unitId,
                     bookingId: booking.id
-                });
-                createdTransactions.push(tx);
-            }
-        }
+                }
+            });
+        });
+
+        const createdTransactions = await this.prisma.$transaction(txPromises);
 
         return { synced: createdTransactions.length, transactions: createdTransactions };
     }
