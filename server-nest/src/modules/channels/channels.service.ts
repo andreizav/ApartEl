@@ -24,8 +24,9 @@ export class ChannelsService {
     async updateMappings(tenantId: string, list: any[]) {
         if (!Array.isArray(list)) throw new BadRequestException('channelMappings must be an array');
 
-        for (const mapping of list) {
-            await this.prisma.channelMapping.upsert({
+        // Batched bulk upsert to minimize SQLite disk synchronization overhead
+        await this.prisma.$transaction(
+            list.map(mapping => this.prisma.channelMapping.upsert({
                 where: { id: mapping.id },
                 update: {
                     unitName: mapping.unitName,
@@ -47,8 +48,8 @@ export class ChannelsService {
                     isMapped: mapping.isMapped ?? false,
                     status: mapping.status ?? 'Inactive'
                 }
-            });
-        }
+            }))
+        );
 
         return this.getMappings(tenantId);
     }
@@ -71,8 +72,9 @@ export class ChannelsService {
     async updateIcal(tenantId: string, list: any[]) {
         if (!Array.isArray(list)) throw new BadRequestException('icalConnections must be an array');
 
-        for (const conn of list) {
-            await this.prisma.icalConnection.upsert({
+        // Batched bulk upsert to minimize SQLite disk synchronization overhead
+        await this.prisma.$transaction(
+            list.map(conn => this.prisma.icalConnection.upsert({
                 where: { id: conn.id },
                 update: {
                     unitName: conn.unitName,
@@ -88,8 +90,8 @@ export class ChannelsService {
                     exportUrl: conn.exportUrl ?? '',
                     lastSync: conn.lastSync ?? 'Never'
                 }
-            });
-        }
+            }))
+        );
 
         return this.getIcal(tenantId);
     }
