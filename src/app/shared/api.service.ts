@@ -171,6 +171,14 @@ export class ApiService {
     });
   }
 
+  addTransactionsBatch(txs: Transaction[]): Observable<Transaction[]> {
+    return this.http.post<Transaction[]>(`${this.apiUrl}/api/transactions/batch`, txs).pipe(
+      tap((createdTxs) => {
+        this.portfolio.transactions.update((t) => [...createdTxs.reverse(), ...t]);
+      })
+    );
+  }
+
   updatePortfolio(portfolio: PropertyGroup[]): Observable<boolean> {
     return this.http.put<PropertyGroup[]>(`${this.apiUrl}/api/portfolio`, portfolio).pipe(
       map((data) => {
