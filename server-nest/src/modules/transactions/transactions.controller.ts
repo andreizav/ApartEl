@@ -18,6 +18,11 @@ export class TransactionsController {
         return this.transactionsService.create(tenantId, tx);
     }
 
+    @Post('batch')
+    createMany(@TenantId() tenantId: string, @Body() txs: any[]) {
+        return this.transactionsService.createMany(tenantId, txs);
+    }
+
     @Get('categories')
     getCategories(@TenantId() tenantId: string) {
         return this.transactionsService.getCategories(tenantId);

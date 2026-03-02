@@ -521,12 +521,26 @@ export class PnLComponent {
     }
 
     // 6. Save Transactions
-    data.forEach(t => this.apiService.addTransaction(t));
-    this.importPreviewData.set([]);
-    this.isImportModalOpen.set(false);
-
-    // Final Load
-    this.loadCategories();
+    if (data.length > 0) {
+      this.apiService.addTransactionsBatch(data).subscribe({
+        next: () => {
+          this.importPreviewData.set([]);
+          this.isImportModalOpen.set(false);
+          this.loadCategories();
+        },
+        error: (e) => {
+          console.error('Failed to save batch transactions', e);
+          // Fallback UI or close modal depending on desired UX
+          this.importPreviewData.set([]);
+          this.isImportModalOpen.set(false);
+          this.loadCategories();
+        }
+      });
+    } else {
+      this.importPreviewData.set([]);
+      this.isImportModalOpen.set(false);
+      this.loadCategories();
+    }
   }
 
   cancelImport() {

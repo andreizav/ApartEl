@@ -31,6 +31,29 @@ export class TransactionsService {
         });
     }
 
+    async createMany(tenantId: string, txs: any[]) {
+        const data = txs.map((tx, index) => ({
+            id: tx.id || `tx-${Date.now()}-${index}`,
+            tenantId,
+            date: new Date(tx.date),
+            property: tx.property ?? '',
+            category: tx.category ?? '',
+            subCategory: tx.subCategory ?? '',
+            description: tx.description ?? '',
+            amount: tx.amount ?? 0,
+            currency: tx.currency ?? 'USD',
+            type: tx.type ?? 'expense',
+            unitId: tx.unitId ?? null,
+            bookingId: tx.bookingId ?? null
+        }));
+
+        const createdTxs = await this.prisma.$transaction(
+            data.map(tx => this.prisma.transaction.create({ data: tx }))
+        );
+
+        return createdTxs;
+    }
+
     async getCategories(tenantId: string) {
         return this.prisma.transactionCategory.findMany({
             where: { tenantId },
