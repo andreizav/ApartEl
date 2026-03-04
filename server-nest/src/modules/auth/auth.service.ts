@@ -37,13 +37,17 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
-        // SQLite doesn't support mode:'insensitive', so we compare with lowercase email
-        const allStaff = await this.prisma.staff.findMany();
-        const user = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
+        // ⚡ Bolt: Use $queryRaw for case-insensitive lookup to avoid O(N) application-side filtering.
+        // Expected impact: Significant reduction in memory usage and latency for login queries.
+        const users = await this.prisma.$queryRaw<any[]>`SELECT * FROM "Staff" WHERE LOWER(email) = LOWER(${email}) LIMIT 1`;
+        const userRaw = users[0];
 
-        if (!user) {
+        if (!userRaw) {
             throw new UnauthorizedException('User not found');
         }
+
+        // Map sqlite integer booleans back to true booleans
+        const user = { ...userRaw, online: Boolean(userRaw.online) };
 
         if (!user.password) {
             throw new UnauthorizedException('Account requires password setup.');
@@ -82,10 +86,10 @@ export class AuthService {
     async register(registerDto: RegisterDto) {
         const { email, orgName, password } = registerDto;
 
-        // SQLite doesn't support mode:'insensitive'
-        const allStaff = await this.prisma.staff.findMany();
-        const existing = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
-        if (existing) {
+        // ⚡ Bolt: Use $queryRaw for case-insensitive lookup to avoid O(N) application-side filtering.
+        // Expected impact: Faster validation during registration by avoiding full table scans in memory.
+        const existingUsers = await this.prisma.$queryRaw<any[]>`SELECT id FROM "Staff" WHERE LOWER(email) = LOWER(${email}) LIMIT 1`;
+        if (existingUsers.length > 0) {
             throw new ConflictException('Email already registered');
         }
 
