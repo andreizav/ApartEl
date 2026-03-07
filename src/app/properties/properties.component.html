@@ -293,7 +293,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (booking of unitBookings(); track booking.id) {
+                @for (booking of renderableUnitBookings(); track booking.id) {
                 <tr
                   class="bg-white dark:bg-[#1c2936] hover:bg-gray-50 dark:hover:bg-[#253545] transition-all shadow-sm rounded-xl group/row">
                   <!-- Guest -->
@@ -301,7 +301,7 @@
                     <div class="flex items-center gap-3">
                       <div
                         class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
-                        {{ getInitials(booking.guestName) }}
+                        {{ booking.initials }}
                       </div>
                       <div>
                         <div class="font-bold text-[#111418] dark:text-white">{{ booking.guestName }}</div>
@@ -320,7 +320,7 @@
                         {{ booking.startDate | date:'MMM d' }} - {{ booking.endDate | date:'MMM d' }}
                       </span>
                       <span class="text-xs text-gray-400 font-medium">
-                        {{ getNightCount(booking.startDate, booking.endDate) }} nights • {{ booking.endDate |
+                        {{ booking.nightCount }} nights • {{ booking.endDate |
                         date:'yyyy'
                         }}
                       </span>
@@ -330,7 +330,7 @@
                   <!-- Source -->
                   <td class="px-6 py-4 border-y border-gray-100 dark:border-[#324d67]">
                     <span class="text-[10px] font-bold uppercase px-2.5 py-1 rounded-md tracking-wide"
-                      [ngClass]="getSourceClass(booking.source)">
+                      [ngClass]="booking.sourceClass">
                       {{ booking.source }}
                     </span>
                   </td>
@@ -338,7 +338,7 @@
                   <!-- Status -->
                   <td class="px-6 py-4 border-y border-gray-100 dark:border-[#324d67]">
                     <span class="px-3 py-1 rounded-full text-xs font-bold capitalize inline-flex items-center gap-1.5"
-                      [ngClass]="getStatusClass(booking.status)">
+                      [ngClass]="booking.statusClass">
                       <span class="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
                       {{ booking.status }}
                     </span>
