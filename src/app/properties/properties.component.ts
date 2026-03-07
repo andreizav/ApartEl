@@ -358,6 +358,20 @@ export class PropertiesComponent implements OnInit {
       .sort((a, b) => b.startDate.getTime() - a.startDate.getTime());
   });
 
+  // ⚡ Bolt Performance Optimization:
+  // Pre-calculate derived values (initials, nights, CSS classes) in a computed signal
+  // instead of calling functions inside the @for loop in the template.
+  // This drastically reduces function calls during Angular's change detection cycles.
+  renderableUnitBookings = computed(() => {
+    return this.unitBookings().map(booking => ({
+      ...booking,
+      initials: this.getInitials(booking.guestName),
+      nightCount: this.getNightCount(booking.startDate, booking.endDate),
+      sourceClass: this.getSourceClass(booking.source),
+      statusClass: this.getStatusClass(booking.status)
+    }));
+  });
+
   nextCheckIn = computed(() => {
     const bookings = this.unitBookings();
     const now = new Date();
