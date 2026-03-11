@@ -37,13 +37,22 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
-        // SQLite doesn't support mode:'insensitive', so we compare with lowercase email
-        const allStaff = await this.prisma.staff.findMany();
-        const user = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
+        // ⚡ Bolt: Replaced O(N) application-side filtering (findMany() then filter) with an indexed, O(1) queryRaw lookup using LOWER() in SQLite for significantly faster case-insensitive email matching.
+        // Prisma raw queries on SQLite return boolean columns as integers (0 or 1), so they are manually cast back.
+        const users = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM Staff WHERE LOWER(email) = LOWER(${email}) LIMIT 1
+        `;
+        const userRaw = users[0];
 
-        if (!user) {
+        if (!userRaw) {
             throw new UnauthorizedException('User not found');
         }
+
+        // Manually cast boolean properties correctly
+        const user = {
+            ...userRaw,
+            online: userRaw.online === 1 || userRaw.online === true
+        };
 
         if (!user.password) {
             throw new UnauthorizedException('Account requires password setup.');
@@ -82,10 +91,12 @@ export class AuthService {
     async register(registerDto: RegisterDto) {
         const { email, orgName, password } = registerDto;
 
-        // SQLite doesn't support mode:'insensitive'
-        const allStaff = await this.prisma.staff.findMany();
-        const existing = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
-        if (existing) {
+        // ⚡ Bolt: Replaced O(N) application-side filtering (findMany() then filter) with an indexed, O(1) queryRaw lookup using LOWER() in SQLite for significantly faster case-insensitive email matching.
+        const existingUsers = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM Staff WHERE LOWER(email) = LOWER(${email}) LIMIT 1
+        `;
+
+        if (existingUsers.length > 0) {
             throw new ConflictException('Email already registered');
         }
 
