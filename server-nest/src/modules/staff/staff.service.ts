@@ -14,10 +14,12 @@ export class StaffService {
     async create(tenantId: string, member: any) {
         if (!member?.email) throw new ConflictException('email required');
 
-        // SQLite doesn't support mode:'insensitive'
-        const allStaff = await this.prisma.staff.findMany();
-        const existing = allStaff.find(s => s.email.toLowerCase() === member.email.toLowerCase());
-        if (existing) {
+        // ⚡ Bolt: Replaced O(N) application-side filtering (findMany() then filter) with an indexed, O(1) queryRaw lookup using LOWER() in SQLite for significantly faster case-insensitive email matching.
+        const existingUsers = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM Staff WHERE LOWER(email) = LOWER(${member.email}) LIMIT 1
+        `;
+
+        if (existingUsers.length > 0) {
             throw new ConflictException('Staff with this email already exists');
         }
 
