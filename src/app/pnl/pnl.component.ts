@@ -139,12 +139,17 @@ export class PnLComponent {
       return tYear === currentYear && tMonth === currentMonth;
     });
 
+    // Bolt Optimization: Calculate parsed dates during map to avoid O(N log N) `new Date()` allocations in sort
     return filteredTxs.map(t => {
       const rateSource = rates[t.currency] || 1;
       const rateTarget = rates[targetCurrency] || 1;
       const converted = t.amount * (rateTarget / rateSource);
-      return { ...t, convertedAmount: converted };
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return {
+        ...t,
+        convertedAmount: converted,
+        _parsedDate: new Date(t.date).getTime() // Cache timestamp for sorting
+      };
+    }).sort((a, b) => b._parsedDate - a._parsedDate);
   });
 
   totalRevenue = computed(() => this.processedTransactions().filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0));
