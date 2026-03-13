@@ -1,0 +1,3 @@
+## 2026-03-13 - Eliminate O(N log N) Date Parsing in Array Sorting
+**Learning:** Found an anti-pattern in the Angular application where string dates were being parsed repeatedly inside `Array.prototype.sort()` comparators using `new Date(str).getTime()`. Since sort comparators run O(N log N) times, this causes significant performance overhead for large datasets.
+**Action:** When mapping and sorting data arrays in components (like `processedTransactions` in `PnLComponent`), calculate timestamps or other expensive parsed values once during the O(N) mapping phase, store them in the resulting object, and use the cached numbers in the sort comparator.
