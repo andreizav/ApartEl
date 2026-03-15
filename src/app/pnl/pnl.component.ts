@@ -8,6 +8,7 @@ import { PortfolioService, Transaction } from '../shared/portfolio.service';
 
 interface ProcessedTransaction extends Transaction {
   convertedAmount: number;
+  parsedDate: number; // ⚡ Bolt: Cache parsed date to avoid O(N log N) re-parsing during sort
 }
 
 export interface Category {
@@ -143,8 +144,8 @@ export class PnLComponent {
       const rateSource = rates[t.currency] || 1;
       const rateTarget = rates[targetCurrency] || 1;
       const converted = t.amount * (rateTarget / rateSource);
-      return { ...t, convertedAmount: converted };
-    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      return { ...t, convertedAmount: converted, parsedDate: new Date(t.date).getTime() };
+    }).sort((a, b) => b.parsedDate - a.parsedDate);
   });
 
   totalRevenue = computed(() => this.processedTransactions().filter(t => t.type === 'income').reduce((sum, t) => sum + t.convertedAmount, 0));
