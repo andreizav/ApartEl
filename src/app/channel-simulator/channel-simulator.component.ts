@@ -81,20 +81,31 @@ export class ChannelSimulatorComponent implements OnInit {
     }
 
     const unitId = this.selectedUnitId();
-    const unitBookings = this.bookings().filter(b => b.unitId === unitId);
+    const rawUnitBookings = this.bookings().filter(b => b.unitId === unitId);
+
+    // Optimize: Pre-parse and cache booking dates to avoid O(N*M) parsing inside the day loop
+    const unitBookings = rawUnitBookings.map(b => {
+      const start = new Date(b.startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(b.endDate);
+      end.setHours(0, 0, 0, 0);
+      return {
+        ...b,
+        _startMs: start.getTime(),
+        _endMs: end.getTime()
+      };
+    });
 
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
       const isToday = this.isSameDay(date, new Date());
 
+      date.setHours(0, 0, 0, 0);
+      const dateMs = date.getTime();
+
       // Check for booking on this day
       const booking = unitBookings.find(b => {
-        const start = new Date(b.startDate);
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(b.endDate);
-        end.setHours(0, 0, 0, 0);
-        date.setHours(0, 0, 0, 0);
-        return date >= start && date <= end;
+        return dateMs >= b._startMs && dateMs <= b._endMs;
       });
 
       days.push({
