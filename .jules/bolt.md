@@ -1,0 +1,3 @@
+## 2024-05-24 - N+1 database queries on transaction generation
+**Learning:** Using Prisma's `create` method in a tight `for` loop causes extreme N+1 round-trip performance issues. With SQLite, these multiple sequential inserts cause significant latency over time due to repeated synchronous disk writes and the application-to-database connection round-trips.
+**Action:** Always batch homogenous data inserts using `prisma.transaction.createMany()` (or similar model methods). For Prisma, when auto-generating IDs in these batches, implement a monotonic ID generator (`Date.now() + i`) or use robust unique identifier libraries (`uuid`) to avoid collisions when creating records quickly in the same tick.
