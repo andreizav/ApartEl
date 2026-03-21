@@ -37,13 +37,18 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
-        // SQLite doesn't support mode:'insensitive', so we compare with lowercase email
-        const allStaff = await this.prisma.staff.findMany();
-        const user = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
+        // SQLite doesn't support mode:'insensitive', so we use queryRaw for efficiency
+        const users = await this.prisma.$queryRaw<any[]>`
+            SELECT * FROM "Staff" WHERE LOWER(email) = LOWER(${email})
+        `;
+        const user = users[0];
 
         if (!user) {
             throw new UnauthorizedException('User not found');
         }
+
+        // SQLite raw query returns booleans as 0/1
+        user.online = Boolean(user.online);
 
         if (!user.password) {
             throw new UnauthorizedException('Account requires password setup.');
@@ -83,8 +88,10 @@ export class AuthService {
         const { email, orgName, password } = registerDto;
 
         // SQLite doesn't support mode:'insensitive'
-        const allStaff = await this.prisma.staff.findMany();
-        const existing = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
+        const existingUsers = await this.prisma.$queryRaw<any[]>`
+            SELECT 1 FROM "Staff" WHERE LOWER(email) = LOWER(${email}) LIMIT 1
+        `;
+        const existing = existingUsers.length > 0;
         if (existing) {
             throw new ConflictException('Email already registered');
         }
