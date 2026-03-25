@@ -6,19 +6,15 @@ export class ChannelsService {
     constructor(private prisma: PrismaService) { }
 
     async getMappings(tenantId: string) {
-        // Get all units for this tenant to find their mappings
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { channelMappings: true } } }
+        // ⚡ Bolt: Prevent N+1 and memory bloat by using nested relational filter
+        // instead of fetching the entire PortfolioGroup -> Unit -> ChannelMapping tree
+        return this.prisma.channelMapping.findMany({
+            where: {
+                unit: {
+                    group: { tenantId }
+                }
+            }
         });
-
-        const mappings: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.channelMappings.forEach(m => mappings.push(m));
-            });
-        });
-        return mappings;
     }
 
     async updateMappings(tenantId: string, list: any[]) {
@@ -54,18 +50,15 @@ export class ChannelsService {
     }
 
     async getIcal(tenantId: string) {
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { icalConnections: true } } }
+        // ⚡ Bolt: Prevent N+1 and memory bloat by using nested relational filter
+        // instead of fetching the entire PortfolioGroup -> Unit -> IcalConnection tree
+        return this.prisma.icalConnection.findMany({
+            where: {
+                unit: {
+                    group: { tenantId }
+                }
+            }
         });
-
-        const connections: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.icalConnections.forEach(c => connections.push(c));
-            });
-        });
-        return connections;
     }
 
     async updateIcal(tenantId: string, list: any[]) {
