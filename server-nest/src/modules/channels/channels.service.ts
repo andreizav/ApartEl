@@ -6,26 +6,17 @@ export class ChannelsService {
     constructor(private prisma: PrismaService) { }
 
     async getMappings(tenantId: string) {
-        // Get all units for this tenant to find their mappings
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { channelMappings: true } } }
+        // Get all mappings for this tenant's units directly to avoid nested object loading in memory
+        return this.prisma.channelMapping.findMany({
+            where: { unit: { group: { tenantId } } }
         });
-
-        const mappings: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.channelMappings.forEach(m => mappings.push(m));
-            });
-        });
-        return mappings;
     }
 
     async updateMappings(tenantId: string, list: any[]) {
         if (!Array.isArray(list)) throw new BadRequestException('channelMappings must be an array');
 
-        for (const mapping of list) {
-            await this.prisma.channelMapping.upsert({
+        const upsertPromises = list.map(mapping =>
+            this.prisma.channelMapping.upsert({
                 where: { id: mapping.id },
                 update: {
                     unitName: mapping.unitName,
@@ -47,32 +38,26 @@ export class ChannelsService {
                     isMapped: mapping.isMapped ?? false,
                     status: mapping.status ?? 'Inactive'
                 }
-            });
-        }
+            })
+        );
+
+        await this.prisma.$transaction(upsertPromises);
 
         return this.getMappings(tenantId);
     }
 
     async getIcal(tenantId: string) {
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { icalConnections: true } } }
+        // Get all iCal connections for this tenant's units directly to avoid nested object loading in memory
+        return this.prisma.icalConnection.findMany({
+            where: { unit: { group: { tenantId } } }
         });
-
-        const connections: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.icalConnections.forEach(c => connections.push(c));
-            });
-        });
-        return connections;
     }
 
     async updateIcal(tenantId: string, list: any[]) {
         if (!Array.isArray(list)) throw new BadRequestException('icalConnections must be an array');
 
-        for (const conn of list) {
-            await this.prisma.icalConnection.upsert({
+        const upsertPromises = list.map(conn =>
+            this.prisma.icalConnection.upsert({
                 where: { id: conn.id },
                 update: {
                     unitName: conn.unitName,
@@ -88,8 +73,10 @@ export class ChannelsService {
                     exportUrl: conn.exportUrl ?? '',
                     lastSync: conn.lastSync ?? 'Never'
                 }
-            });
-        }
+            })
+        );
+
+        await this.prisma.$transaction(upsertPromises);
 
         return this.getIcal(tenantId);
     }
@@ -137,50 +124,54 @@ export class ChannelsService {
         const updatedMappings: any[] = [];
         const updatedIcals: any[] = [];
 
+        const operations: any[] = [];
+
         for (const { unit, groupName } of allUnits) {
             const existingMap = currentMappings.find((m: any) => m.unitId === unit.id);
             if (existingMap) {
-                await this.prisma.channelMapping.update({
+                operations.push(this.prisma.channelMapping.update({
                     where: { id: existingMap.id },
                     data: { unitName: unit.name, groupName }
-                });
+                }));
                 updatedMappings.push({ ...existingMap, unitName: unit.name, groupName });
             } else {
-                const newMapping = await this.prisma.channelMapping.create({
-                    data: {
-                        id: `cm-${unit.id}`,
-                        unitId: unit.id,
-                        unitName: unit.name,
-                        groupName,
-                        airbnbId: '',
-                        bookingId: '',
-                        markup: 0,
-                        isMapped: false,
-                        status: 'Inactive'
-                    }
-                });
-                updatedMappings.push(newMapping);
+                const newMappingData = {
+                    id: `cm-${unit.id}`,
+                    unitId: unit.id,
+                    unitName: unit.name,
+                    groupName,
+                    airbnbId: '',
+                    bookingId: '',
+                    markup: 0,
+                    isMapped: false,
+                    status: 'Inactive'
+                };
+                operations.push(this.prisma.channelMapping.create({
+                    data: newMappingData
+                }));
+                updatedMappings.push(newMappingData);
             }
 
             const existingIcal = currentIcals.find((i: any) => i.unitId === unit.id);
             if (existingIcal) {
-                await this.prisma.icalConnection.update({
+                operations.push(this.prisma.icalConnection.update({
                     where: { id: existingIcal.id },
                     data: { unitName: unit.name }
-                });
+                }));
                 updatedIcals.push({ ...existingIcal, unitName: unit.name });
             } else {
-                const newIcal = await this.prisma.icalConnection.create({
-                    data: {
-                        id: `ical-${unit.id}`,
-                        unitId: unit.id,
-                        unitName: unit.name,
-                        importUrl: '',
-                        exportUrl: `https://api.apartel.app/cal/${tenantId}/${unit.id}.ics`,
-                        lastSync: 'Never'
-                    }
-                });
-                updatedIcals.push(newIcal);
+                const newIcalData = {
+                    id: `ical-${unit.id}`,
+                    unitId: unit.id,
+                    unitName: unit.name,
+                    importUrl: '',
+                    exportUrl: `https://api.apartel.app/cal/${tenantId}/${unit.id}.ics`,
+                    lastSync: 'Never'
+                };
+                operations.push(this.prisma.icalConnection.create({
+                    data: newIcalData
+                }));
+                updatedIcals.push(newIcalData);
             }
         }
 
@@ -191,13 +182,15 @@ export class ChannelsService {
                 console.log(`[Channels] Syncing iCal for tenant ${tenantId}, unit ${conn.unitId} from ${conn.importUrl}`);
                 // Mock sync: Just update timestamp
                 const now = new Date().toISOString();
-                await this.prisma.icalConnection.update({
+                operations.push(this.prisma.icalConnection.update({
                     where: { id: conn.id },
                     data: { lastSync: now }
-                });
+                }));
                 conn.lastSync = now;
             }
         }
+
+        await this.prisma.$transaction(operations);
 
         return { channelMappings: updatedMappings, icalConnections: updatedIcals };
     }
