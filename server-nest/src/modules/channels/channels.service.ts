@@ -6,19 +6,12 @@ export class ChannelsService {
     constructor(private prisma: PrismaService) { }
 
     async getMappings(tenantId: string) {
-        // Get all units for this tenant to find their mappings
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { channelMappings: true } } }
+        // Bolt Performance Optimization: Directly query channel mappings filtering by the tenant's relation
+        // Avoids N+1 application-side extraction and large memory allocations of deeply nested unit/group arrays.
+        // Expected Impact: Reduces query payload size and memory footprint, O(1) query instead of deeply nested includes
+        return this.prisma.channelMapping.findMany({
+            where: { unit: { group: { tenantId } } }
         });
-
-        const mappings: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.channelMappings.forEach(m => mappings.push(m));
-            });
-        });
-        return mappings;
     }
 
     async updateMappings(tenantId: string, list: any[]) {
@@ -54,18 +47,12 @@ export class ChannelsService {
     }
 
     async getIcal(tenantId: string) {
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: { include: { icalConnections: true } } }
+        // Bolt Performance Optimization: Directly query iCal connections filtering by the tenant's relation
+        // Avoids over-fetching the entire portfolio group and unit hierarchy
+        // Expected Impact: Reduces query payload size and memory footprint, O(1) query instead of deeply nested includes
+        return this.prisma.icalConnection.findMany({
+            where: { unit: { group: { tenantId } } }
         });
-
-        const connections: any[] = [];
-        groups.forEach(g => {
-            g.units.forEach(u => {
-                u.icalConnections.forEach(c => connections.push(c));
-            });
-        });
-        return connections;
     }
 
     async updateIcal(tenantId: string, list: any[]) {
