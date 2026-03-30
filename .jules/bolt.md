@@ -1,0 +1,3 @@
+## 2024-03-30 - Replace O(N) application-side filtering with direct DB lookup
+**Learning:** SQLite doesn't natively support case-insensitive unique constraints without collations, leading to patterns where developers might fetch all records using `findMany` and filter them application-side using `.find(x => x.toLowerCase() === val.toLowerCase())`. This pattern is an O(N) operation on memory and DB query which scales poorly.
+**Action:** Use Prisma's `$queryRaw` to do an O(1) direct database case-insensitive lookup, fetching only the `id`, then use `findUnique` on that `id` to obtain properly-typed models without manually typecasting `$queryRaw` results. This pattern must be applied consistently across the codebase, e.g., in both auth and staff services.
