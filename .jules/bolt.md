@@ -1,0 +1,3 @@
+## 2025-04-05 - Batching Independent Queries and Eliminating N+1 using in operator
+**Learning:** Sequential Prisma queries for independent entities, such as those in BootstrapService.getBootstrapData, create unnecessary sequential database round-trips which bottleneck performance. Furthermore, iterating over entities (like units) to fetch dependent data creates severe N+1 query patterns.
+**Action:** When multiple independent Prisma queries exist, wrap them in Promise.all to fetch them concurrently. To resolve nested N+1 query issues, avoid querying inside loops; instead, collect dependent IDs (e.g., unitIds) using array methods like flatMap and perform a single bulk query using the 'in' operator to retrieve the required data in a single round-trip.
