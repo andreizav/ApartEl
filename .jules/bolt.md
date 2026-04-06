@@ -1,0 +1,3 @@
+## 2025-04-06 - Optimize Bootstrap data fetching
+**Learning:** Sequential `findMany` and `findUnique` calls on independent root entities introduce unnecessary database round-trips. Furthermore, iterating over entities (like `group.units`) and making individual Prisma calls inside the loop creates an N+1 query problem, severely impacting startup performance.
+**Action:** Use `Promise.all` to fetch multiple independent root entities concurrently. To resolve nested N+1 issues in Prisma, avoid looping over entities; instead, collect IDs into an array (e.g., using `flatMap`) and perform a single batch query using the `in` operator (e.g., `where: { unitId: { in: unitIds } }`).
