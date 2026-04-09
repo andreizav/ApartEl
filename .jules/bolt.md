@@ -1,0 +1,3 @@
+## 2024-04-09 - Optimize Bootstrap Data Fetching Performance
+**Learning:** In heavily nested queries mapping `units` -> `channelMappings` and `icalConnections` during application bootstrap, it's more performant to aggregate all unit IDs using `.flatMap()` and batch the Prisma lookup query via `.in()`, rather than performing synchronized loop iterations. Concurrently resolving queries at the root entity level in `.getBootstrapData()` utilizing `Promise.all()` mitigates excessive sequential database delays during critical rendering stages.
+**Action:** When extracting grouped entities inside arrays loop sequences, collect their respective IDs using array operations and switch from standard loops running queries to bundled `.in` batched requests using Promises natively.
