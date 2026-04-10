@@ -1,0 +1,3 @@
+## 2024-05-15 - Concurrent Queries Promise.all and N+1 Fix
+**Learning:** In the BootstrapService.getBootstrapData method, sequential `await this.prisma...` operations can be batched concurrently using `Promise.all` to save on multiple database round trips. Furthermore, nested loops performing sequential queries create N+1 bottlenecks that should be optimized using bulk `in` lookups.
+**Action:** When implementing new features that fetch data sequentially or in loops, proactively look for opportunities to bundle queries together with `Promise.all` or rewrite loop-based N+1 queries using `where: { id: { in: ids } }` block mechanisms.
