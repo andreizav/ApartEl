@@ -1,0 +1,3 @@
+## 2024-05-20 - [Promise.all for Prisma Data Fetching & Removing N+1 Queries with in operator]
+**Learning:** Sequential Prisma fetches (`await prisma.model.findMany`) cause significant N+1 queries and performance bottlenecks when loading multiple independent root entities on application boot (like `BootstrapService.getBootstrapData`). Additionally, querying related tables inside nested loops causes massive database roundtrips.
+**Action:** Use `Promise.all` to fetch all independent models concurrently, effectively reducing the bottleneck to the slowest query. To remove N+1 queries, collect nested IDs into an array (using `flatMap`) and make a single bulk query using Prisma's `in` array operator, keeping these inside the parallel execution as well.
