@@ -1,0 +1,3 @@
+## 2026-04-15 - Parallelize Root Entities & Flatten Nested N+1 Queries
+**Learning:** Sequential database queries (fetching portfolioGroups, bookings, clients, etc.) and nested looping N+1 queries (fetching channelMappings, icalConnections per unit) in data initialization payloads like `BootstrapService.getBootstrapData` cause excessive database round-trips and degrade backend performance.
+**Action:** Use `Promise.all` to fetch independent root entities concurrently. Additionally, for nested child associations, resolve N+1 queries by flattening parent identifiers (e.g., using `flatMap`) and performing single bulk `in` queries to fetch children concurrently, completely bypassing inner loops.
