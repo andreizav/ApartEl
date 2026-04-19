@@ -37,9 +37,12 @@ export class AuthService {
 
     async login(loginDto: LoginDto) {
         const { email, password } = loginDto;
-        // SQLite doesn't support mode:'insensitive', so we compare with lowercase email
-        const allStaff = await this.prisma.staff.findMany();
-        const user = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
+
+        // ⚡ Bolt: Performance Optimization
+        // Why: Avoid O(N) application-side memory allocation and filtering for a basic lookup.
+        // Impact: Reduces lookup time from O(N) to O(1) database-side via index or faster scan.
+        const rawResult = await this.prisma.$queryRaw<{ id: string }[]>`SELECT id FROM Staff WHERE LOWER(email) = LOWER(${email}) LIMIT 1`;
+        const user = rawResult.length > 0 ? await this.prisma.staff.findUnique({ where: { id: rawResult[0].id } }) : null;
 
         if (!user) {
             throw new UnauthorizedException('User not found');
@@ -82,10 +85,11 @@ export class AuthService {
     async register(registerDto: RegisterDto) {
         const { email, orgName, password } = registerDto;
 
-        // SQLite doesn't support mode:'insensitive'
-        const allStaff = await this.prisma.staff.findMany();
-        const existing = allStaff.find(s => s.email.toLowerCase() === email.toLowerCase());
-        if (existing) {
+        // ⚡ Bolt: Performance Optimization
+        // Why: Avoid O(N) application-side memory allocation and filtering for a basic lookup.
+        // Impact: Reduces lookup time from O(N) to O(1) database-side via index or faster scan.
+        const rawResult = await this.prisma.$queryRaw<{ id: string }[]>`SELECT id FROM Staff WHERE LOWER(email) = LOWER(${email}) LIMIT 1`;
+        if (rawResult.length > 0) {
             throw new ConflictException('Email already registered');
         }
 
