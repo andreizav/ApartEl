@@ -1,0 +1,3 @@
+## 2024-05-19 - [Resolve Sequential Query Fetching & N+1 Loops in Bootstrap Payload]
+**Learning:** Sequential Prisma queries for multiple independent tables (e.g. initial application state payloads like `getBootstrapData`) introduce significant network and database round-trip overhead. Also, fetching related records in loops inherently causes N+1 problems scaling multiplicatively with the primary record count.
+**Action:** When building aggregate data payloads (like boot processes), bundle unrelated root entities in `Promise.all` for parallel execution. For nested entity data that can't be fetched efficiently with Prisma `include`, extract parent ids and execute a bulk `findMany` using the `{ in: [...] }` filter instead of looping over parents.
