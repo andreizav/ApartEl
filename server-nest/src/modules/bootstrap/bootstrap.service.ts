@@ -6,22 +6,44 @@ export class BootstrapService {
     constructor(private prisma: PrismaService) { }
 
     async getBootstrapData(tenantId: string, user: any, tenant: any) {
-        // Get portfolio with units
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: true }
-        });
+        // Fetch independent entities concurrently
+        // ⚡ Bolt: Resolves sequential database operations during bootstrap
+        const [
+            groups,
+            bookings,
+            clients,
+            staff,
+            transactions,
+            inventory,
+            tenantData
+        ] = await Promise.all([
+            this.prisma.portfolioGroup.findMany({
+                where: { tenantId },
+                include: { units: true }
+            }),
+            this.prisma.booking.findMany({
+                where: { tenantId }
+            }),
+            this.prisma.client.findMany({
+                where: { tenantId },
+                include: { messages: true }
+            }),
+            this.prisma.staff.findMany({
+                where: { tenantId }
+            }),
+            this.prisma.transaction.findMany({
+                where: { tenantId },
+                orderBy: { date: 'desc' }
+            }),
+            this.prisma.inventoryCategory.findMany({
+                where: { tenantId },
+                include: { items: true }
+            }),
+            this.prisma.tenant.findUnique({
+                where: { id: tenantId }
+            })
+        ]);
 
-        // Get bookings
-        const bookings = await this.prisma.booking.findMany({
-            where: { tenantId }
-        });
-
-        // Get clients with messages
-        const clients = await this.prisma.client.findMany({
-            where: { tenantId },
-            include: { messages: true }
-        });
         const clientsWithMessages = clients.map(c => ({
             ...c,
             messages: c.messages.map(m => ({
@@ -30,46 +52,22 @@ export class BootstrapService {
             }))
         }));
 
-        // Get staff
-        const staff = await this.prisma.staff.findMany({
-            where: { tenantId }
-        });
+        // Get channel mappings and ical connections from units using bulk queries
+        // ⚡ Bolt: Eliminates N+1 queries from nested loops
+        const unitIds = groups.flatMap(group => group.units.map(unit => unit.id));
 
-        // Get transactions
-        const transactions = await this.prisma.transaction.findMany({
-            where: { tenantId },
-            orderBy: { date: 'desc' }
-        });
-
-        // Get inventory
-        const inventory = await this.prisma.inventoryCategory.findMany({
-            where: { tenantId },
-            include: { items: true }
-        });
-
-        // Get channel mappings and ical connections from units
-        const channelMappings: any[] = [];
-        const icalConnections: any[] = [];
-
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
-
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
-        }
+        const [channelMappings, icalConnections] = unitIds.length > 0
+            ? await Promise.all([
+                this.prisma.channelMapping.findMany({
+                    where: { unitId: { in: unitIds } }
+                }),
+                this.prisma.icalConnection.findMany({
+                    where: { unitId: { in: unitIds } }
+                })
+            ])
+            : [[], []];
 
         // Get tenant settings
-        const tenantData = await this.prisma.tenant.findUnique({
-            where: { id: tenantId }
-        });
-
         const storedOtaConfigs = tenantData?.otaConfigs ? JSON.parse(tenantData.otaConfigs) : {};
         const otaConfigs = {
             airbnb: { isEnabled: false },
@@ -142,8 +140,9 @@ export class BootstrapService {
             { id: `u-201-${Date.now()}`, name: 'Penthouse Suite', basePrice: 350, cleaningFee: 100, photos: JSON.stringify([{ url: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?q=80&w=800&auto=format&fit=crop', caption: 'View' }]) }
         ];
 
-        for (const u of units) {
-            await this.prisma.unit.create({
+        // ⚡ Bolt: Use Promise.all to resolve sequential N+1 insertions
+        await Promise.all(units.map(u =>
+            this.prisma.unit.create({
                 data: {
                     id: u.id,
                     groupId,
@@ -157,8 +156,8 @@ export class BootstrapService {
                     wifiPassword: 'welcome-home',
                     photos: u.photos
                 }
-            });
-        }
+            })
+        ));
 
         // --- 2. Staff ---
         const staff = [
@@ -166,8 +165,9 @@ export class BootstrapService {
             { id: `s2-${Date.now()}`, name: 'Bob Wilson', role: 'Cleaner', email: 'bob@apartel.com' }
         ];
 
-        for (const s of staff) {
-            await this.prisma.staff.create({
+        // ⚡ Bolt: Use Promise.all to resolve sequential N+1 insertions
+        await Promise.all(staff.map(s =>
+            this.prisma.staff.create({
                 data: {
                     id: s.id,
                     tenantId,
@@ -179,8 +179,8 @@ export class BootstrapService {
                     online: Math.random() > 0.5,
                     lastActive: new Date()
                 }
-            });
-        }
+            })
+        ));
 
         // --- 3. Transaction Categories (P&L) ---
         // Income
