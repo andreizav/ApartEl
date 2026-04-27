@@ -1,0 +1,3 @@
+## 2024-04-27 - Resolve N+1 queries in BootstrapService with Promise.all
+**Learning:** Sequential database queries inside NestJS services during application bootstrap can be a significant performance bottleneck. When aggregating multiple independent root entities (e.g., portfolio groups, bookings, clients) and nested entities (e.g., channel mappings across units), doing so sequentially or via nested loops causes an N+1 database round-trip penalty.
+**Action:** Use `Promise.all` to fetch independent root entities concurrently. For nested entities associated with an array of parents, extract all parent IDs (e.g., `flatMap`) and use Prisma's `in` operator to fetch them in a single batch query, rather than querying inside loops.
