@@ -1,0 +1,3 @@
+## 2024-05-18 - [Bootstrap Data Fetching N+1 queries]
+**Learning:** The bootstrap process fetched units, and then mapped over each unit to execute individual sequential DB queries, creating an N+1 query loop for channels mappings and ical connections. Additionally, root entities were fetched sequentially without any async coordination.
+**Action:** Replace sequential queries with a single `Promise.all` fetch when retrieving independent root entities. Gather child identifiers through an array map into a unified list, then retrieve dependencies via an array `in` clause lookup to effectively avoid N+1 query structures. Use `Promise.all` for independent DB operations.
