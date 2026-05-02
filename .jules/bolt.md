@@ -1,0 +1,3 @@
+## 2026-05-02 - [Prisma N+1 Query Loops on Initialization]
+**Learning:** Initializing portfolio groups via nested loops dynamically fetched dependent tables (`ChannelMapping`, `IcalConnection`) in N+1 queries. For large portfolios, this blocks application startup, scaling latency linearly.
+**Action:** Always batch dependent entity lookups using flat maps and the Prisma `in` operator combined with `Promise.all` inside initialization or bootstrap loops, allowing queries to resolve collectively and offloading loop overhead to the database driver. Proxy benchmarking showed query latency dropping from ~711ms to ~28ms.
