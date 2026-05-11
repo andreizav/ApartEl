@@ -21,8 +21,7 @@ export class AuthService {
             if (isProduction) {
                 throw new Error('CRITICAL SECURITY ERROR: JWT_SECRET is not defined in environment variables.');
             }
-            console.warn('SECURITY WARNING: Using insecure default JWT secret. Do not use this in production!');
-            return 'dev-secret-change-in-production';
+            throw new Error('JWT_SECRET is missing');
         }
         return secret;
     }
