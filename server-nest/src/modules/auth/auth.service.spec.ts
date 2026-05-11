@@ -50,7 +50,7 @@ describe('AuthService', () => {
 
     it('should use configured JWT secret', async () => {
         mockConfigService.get.mockImplementation((key) => {
-            if (key === 'JWT_SECRET') return 'super-secure-secret';
+            if (key === 'JWT_SECRET') return 'test_jwt_secret_value_not_real';
             if (key === 'NODE_ENV') return 'production';
             return null;
         });
