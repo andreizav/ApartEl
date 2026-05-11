@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../shared/prisma.service';
 
 @Injectable()
@@ -6,22 +6,50 @@ export class BootstrapService {
     constructor(private prisma: PrismaService) { }
 
     async getBootstrapData(tenantId: string, user: any, tenant: any) {
-        // Get portfolio with units
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: true }
-        });
+        // Fetch independent entities concurrently
+        const [
+            groups,
+            bookings,
+            clients,
+            staff,
+            transactions,
+            inventory,
+            tenantData
+        ] = await Promise.all([
+            // Get portfolio with units
+            this.prisma.portfolioGroup.findMany({
+                where: { tenantId },
+                include: { units: true }
+            }),
+            // Get bookings
+            this.prisma.booking.findMany({
+                where: { tenantId }
+            }),
+            // Get clients with messages
+            this.prisma.client.findMany({
+                where: { tenantId },
+                include: { messages: true }
+            }),
+            // Get staff
+            this.prisma.staff.findMany({
+                where: { tenantId }
+            }),
+            // Get transactions
+            this.prisma.transaction.findMany({
+                where: { tenantId },
+                orderBy: { date: 'desc' }
+            }),
+            // Get inventory
+            this.prisma.inventoryCategory.findMany({
+                where: { tenantId },
+                include: { items: true }
+            }),
+            // Get tenant settings
+            this.prisma.tenant.findUnique({
+                where: { id: tenantId }
+            })
+        ]);
 
-        // Get bookings
-        const bookings = await this.prisma.booking.findMany({
-            where: { tenantId }
-        });
-
-        // Get clients with messages
-        const clients = await this.prisma.client.findMany({
-            where: { tenantId },
-            include: { messages: true }
-        });
         const clientsWithMessages = clients.map(c => ({
             ...c,
             messages: c.messages.map(m => ({
@@ -30,45 +58,17 @@ export class BootstrapService {
             }))
         }));
 
-        // Get staff
-        const staff = await this.prisma.staff.findMany({
-            where: { tenantId }
-        });
+        // Get channel mappings and ical connections from units without N+1 queries
+        const unitIds = groups.flatMap(g => g.units.map(u => u.id));
 
-        // Get transactions
-        const transactions = await this.prisma.transaction.findMany({
-            where: { tenantId },
-            orderBy: { date: 'desc' }
-        });
-
-        // Get inventory
-        const inventory = await this.prisma.inventoryCategory.findMany({
-            where: { tenantId },
-            include: { items: true }
-        });
-
-        // Get channel mappings and ical connections from units
-        const channelMappings: any[] = [];
-        const icalConnections: any[] = [];
-
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
-
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
-        }
-
-        // Get tenant settings
-        const tenantData = await this.prisma.tenant.findUnique({
-            where: { id: tenantId }
-        });
+        const [channelMappings, icalConnections] = await Promise.all([
+            this.prisma.channelMapping.findMany({
+                where: { unitId: { in: unitIds } }
+            }),
+            this.prisma.icalConnection.findMany({
+                where: { unitId: { in: unitIds } }
+            })
+        ]);
 
         const storedOtaConfigs = tenantData?.otaConfigs ? JSON.parse(tenantData.otaConfigs) : {};
         const otaConfigs = {
@@ -142,23 +142,21 @@ export class BootstrapService {
             { id: `u-201-${Date.now()}`, name: 'Penthouse Suite', basePrice: 350, cleaningFee: 100, photos: JSON.stringify([{ url: 'https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?q=80&w=800&auto=format&fit=crop', caption: 'View' }]) }
         ];
 
-        for (const u of units) {
-            await this.prisma.unit.create({
-                data: {
-                    id: u.id,
-                    groupId,
-                    name: u.name,
-                    internalName: u.name,
-                    basePrice: u.basePrice,
-                    cleaningFee: u.cleaningFee,
-                    status: 'Active',
-                    officialAddress: '123 Main St, Central City',
-                    wifiSsid: 'ApartEL_Guest',
-                    wifiPassword: 'welcome-home',
-                    photos: u.photos
-                }
-            });
-        }
+        await this.prisma.unit.createMany({
+            data: units.map(u => ({
+                id: u.id,
+                groupId,
+                name: u.name,
+                internalName: u.name,
+                basePrice: u.basePrice,
+                cleaningFee: u.cleaningFee,
+                status: 'Active',
+                officialAddress: '123 Main St, Central City',
+                wifiSsid: 'ApartEL_Guest',
+                wifiPassword: 'welcome-home',
+                photos: u.photos
+            }))
+        });
 
         // --- 2. Staff ---
         const staff = [
@@ -166,96 +164,95 @@ export class BootstrapService {
             { id: `s2-${Date.now()}`, name: 'Bob Wilson', role: 'Cleaner', email: 'bob@apartel.com' }
         ];
 
-        for (const s of staff) {
-            await this.prisma.staff.create({
-                data: {
-                    id: s.id,
-                    tenantId,
-                    name: s.name,
-                    role: s.role,
-                    email: s.email,
-                    status: 'Active',
-                    avatar: `https://ui-avatars.com/api/?name=${s.name}&background=random`,
-                    online: Math.random() > 0.5,
-                    lastActive: new Date()
-                }
-            });
-        }
+        await this.prisma.staff.createMany({
+            data: staff.map(s => ({
+                id: s.id,
+                tenantId,
+                name: s.name,
+                role: s.role,
+                email: s.email,
+                status: 'Active',
+                avatar: `https://ui-avatars.com/api/?name=${s.name}&background=random`,
+                online: Math.random() > 0.5,
+                lastActive: new Date()
+            }))
+        });
 
         // --- 3. Transaction Categories (P&L) ---
-        // Income
         const incCatId = `tc-inc-${Date.now()}`;
-        await this.prisma.transactionCategory.create({
-            data: {
-                id: incCatId,
-                tenantId,
-                name: 'Accommodation',
-                type: 'income',
-                subCategories: {
-                    create: [
-                        { id: `tsc-book-${Date.now()}`, name: 'Booking Revenue' },
-                        { id: `tsc-clean-${Date.now()}`, name: 'Cleaning Fee' }
-                    ]
-                }
-            }
-        });
-
-        // Expenses
         const expCat1 = `tc-exp1-${Date.now()}`;
-        await this.prisma.transactionCategory.create({
-            data: {
-                id: expCat1,
-                tenantId,
-                name: 'Operations',
-                type: 'expense',
-                subCategories: { create: [{ id: `tsc-ut-${Date.now()}`, name: 'Utilities' }, { id: `tsc-int-${Date.now()}`, name: 'Internet' }] }
-            }
-        });
         const expCat2 = `tc-exp2-${Date.now()}`;
-        await this.prisma.transactionCategory.create({
-            data: {
-                id: expCat2,
-                tenantId,
-                name: 'Maintenance',
-                type: 'expense',
-                subCategories: { create: [{ id: `tsc-rep-${Date.now()}`, name: 'Repairs' }, { id: `tsc-sup-${Date.now()}`, name: 'Supplies' }] }
-            }
-        });
+
+        await Promise.all([
+            // Income
+            this.prisma.transactionCategory.create({
+                data: {
+                    id: incCatId,
+                    tenantId,
+                    name: 'Accommodation',
+                    type: 'income',
+                    subCategories: {
+                        create: [
+                            { id: `tsc-book-${Date.now()}`, name: 'Booking Revenue' },
+                            { id: `tsc-clean-${Date.now()}`, name: 'Cleaning Fee' }
+                        ]
+                    }
+                }
+            }),
+            // Expenses
+            this.prisma.transactionCategory.create({
+                data: {
+                    id: expCat1,
+                    tenantId,
+                    name: 'Operations',
+                    type: 'expense',
+                    subCategories: { create: [{ id: `tsc-ut-${Date.now()}`, name: 'Utilities' }, { id: `tsc-int-${Date.now()}`, name: 'Internet' }] }
+                }
+            }),
+            this.prisma.transactionCategory.create({
+                data: {
+                    id: expCat2,
+                    tenantId,
+                    name: 'Maintenance',
+                    type: 'expense',
+                    subCategories: { create: [{ id: `tsc-rep-${Date.now()}`, name: 'Repairs' }, { id: `tsc-sup-${Date.now()}`, name: 'Supplies' }] }
+                }
+            })
+        ]);
 
         // --- 4. Clients & Messages ---
         const client1Id = `c1-${Date.now()}`;
         const client2Id = `c2-${Date.now()}`;
 
-        await this.prisma.client.create({
-            data: {
-                id: client1Id,
-                tenantId,
-                name: 'John Smith',
-                phoneNumber: '+1555010022',
-                email: 'john.smith@example.com',
-                status: 'Replied',
-                platform: 'whatsapp',
-                lastActive: new Date(),
-                avatar: 'https://ui-avatars.com/api/?name=John+Smith&background=0D8ABC&color=fff',
-                unreadCount: 0,
-                previousBookings: 2
-            }
-        });
-
-        await this.prisma.client.create({
-            data: {
-                id: client2Id,
-                tenantId,
-                name: 'Sarah Connor',
-                phoneNumber: '+15550998877',
-                email: 'sarah@example.com',
-                status: 'Confirmed',
-                platform: 'telegram',
-                lastActive: new Date(),
-                avatar: 'https://ui-avatars.com/api/?name=Sarah+Connor&background=random',
-                unreadCount: 1,
-                previousBookings: 0
-            }
+        await this.prisma.client.createMany({
+            data: [
+                {
+                    id: client1Id,
+                    tenantId,
+                    name: 'John Smith',
+                    phoneNumber: '+1555010022',
+                    email: 'john.smith@example.com',
+                    status: 'Replied',
+                    platform: 'whatsapp',
+                    lastActive: new Date(),
+                    avatar: 'https://ui-avatars.com/api/?name=John+Smith&background=0D8ABC&color=fff',
+                    unreadCount: 0,
+                    previousBookings: 2
+                },
+                {
+                    id: client2Id,
+                    tenantId,
+                    name: 'Sarah Connor',
+                    phoneNumber: '+15550998877',
+                    email: 'sarah@example.com',
+                    status: 'Confirmed',
+                    platform: 'telegram',
+                    lastActive: new Date(),
+                    avatar: 'https://ui-avatars.com/api/?name=Sarah+Connor&background=random',
+                    unreadCount: 1,
+                    previousBookings: 0
+                }
+            ]
         });
 
         await this.prisma.message.createMany({
@@ -277,64 +274,61 @@ export class BootstrapService {
         const futureStart = new Date(now); futureStart.setDate(now.getDate() + 10);
         const futureEnd = new Date(now); futureEnd.setDate(now.getDate() + 15);
 
-        // Past Booking
-        await this.prisma.booking.create({
-            data: {
-                id: `b-past-${Date.now()}`, tenantId, unitId: units[0].id,
-                guestName: 'Past Guest', guestPhone: '+1000001',
-                startDate: pastStart, endDate: pastEnd,
-                source: 'airbnb', status: 'checked_out',
-                price: 500, createdAt: pastStart
-            }
-        });
-        // Income for past booking
-        await this.prisma.transaction.create({
-            data: {
-                id: `t-inc-1-${Date.now()}`, tenantId, date: pastStart.toISOString(),
-                property: units[0].name, category: 'Accommodation', subCategory: 'Booking Revenue',
-                description: 'Airbnb Payout #123', amount: 500, currency: 'USD', type: 'income',
-                unitId: units[0].id
-            }
-        });
-
-        // Current Booking
-        await this.prisma.booking.create({
-            data: {
-                id: `b-curr-${Date.now()}`, tenantId, unitId: units[1].id,
-                guestName: 'John Smith', guestPhone: '+1555010022',
-                startDate: currentStart, endDate: currentEnd,
-                source: 'direct', status: 'checked_in',
-                price: 600, createdAt: currentStart
-            }
+        await this.prisma.booking.createMany({
+            data: [
+                {
+                    id: `b-past-${Date.now()}`, tenantId, unitId: units[0].id,
+                    guestName: 'Past Guest', guestPhone: '+1000001',
+                    startDate: pastStart, endDate: pastEnd,
+                    source: 'airbnb', status: 'checked_out',
+                    price: 500, createdAt: pastStart
+                },
+                {
+                    id: `b-curr-${Date.now()}`, tenantId, unitId: units[1].id,
+                    guestName: 'John Smith', guestPhone: '+1555010022',
+                    startDate: currentStart, endDate: currentEnd,
+                    source: 'direct', status: 'checked_in',
+                    price: 600, createdAt: currentStart
+                },
+                {
+                    id: `b-fut-${Date.now()}`, tenantId, unitId: units[2].id,
+                    guestName: 'Future Guest', guestPhone: '+1000002',
+                    startDate: futureStart, endDate: futureEnd,
+                    source: 'booking', status: 'confirmed',
+                    price: 1500, createdAt: now
+                }
+            ]
         });
 
-        // Future Booking
-        await this.prisma.booking.create({
-            data: {
-                id: `b-fut-${Date.now()}`, tenantId, unitId: units[2].id,
-                guestName: 'Future Guest', guestPhone: '+1000002',
-                startDate: futureStart, endDate: futureEnd,
-                source: 'booking', status: 'confirmed',
-                price: 1500, createdAt: now
-            }
-        });
-
-        // Random Expenses
-        await this.prisma.transaction.create({
-            data: {
-                id: `t-exp-1-${Date.now()}`, tenantId, date: new Date().toISOString(),
-                property: units[1].name, category: 'Operations', subCategory: 'Internet',
-                description: 'Monthly Fiber Bill', amount: 65, currency: 'USD', type: 'expense',
-                unitId: units[1].id
-            }
+        await this.prisma.transaction.createMany({
+            data: [
+                // Income for past booking
+                {
+                    id: `t-inc-1-${Date.now()}`, tenantId, date: pastStart.toISOString(),
+                    property: units[0].name, category: 'Accommodation', subCategory: 'Booking Revenue',
+                    description: 'Airbnb Payout #123', amount: 500, currency: 'USD', type: 'income',
+                    unitId: units[0].id
+                },
+                // Random Expenses
+                {
+                    id: `t-exp-1-${Date.now()}`, tenantId, date: new Date().toISOString(),
+                    property: units[1].name, category: 'Operations', subCategory: 'Internet',
+                    description: 'Monthly Fiber Bill', amount: 65, currency: 'USD', type: 'expense',
+                    unitId: units[1].id
+                }
+            ]
         });
 
         // --- 6. Inventory ---
         const bedCat = `cat-bed-${Date.now()}`;
         const bathCat = `cat-bath-${Date.now()}`;
 
-        await this.prisma.inventoryCategory.create({ data: { id: bedCat, tenantId, name: 'Bedding' } });
-        await this.prisma.inventoryCategory.create({ data: { id: bathCat, tenantId, name: 'Bathroom' } });
+        await this.prisma.inventoryCategory.createMany({
+            data: [
+                { id: bedCat, tenantId, name: 'Bedding' },
+                { id: bathCat, tenantId, name: 'Bathroom' }
+            ]
+        });
 
         await this.prisma.inventoryItem.createMany({
             data: [
