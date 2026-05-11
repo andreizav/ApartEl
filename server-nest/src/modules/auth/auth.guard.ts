@@ -18,7 +18,7 @@ export class AuthGuard implements CanActivate {
             if (isProduction) {
                 throw new Error('CRITICAL SECURITY ERROR: JWT_SECRET is not defined in environment variables.');
             }
-            return 'your_jwt_secret_here';
+            throw new Error('JWT_SECRET is missing');
         }
         return secret;
     }

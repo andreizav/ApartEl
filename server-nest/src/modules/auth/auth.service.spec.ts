@@ -85,7 +85,7 @@ describe('AuthService', () => {
             .toThrow('CRITICAL SECURITY ERROR: JWT_SECRET is not defined');
     });
 
-    it('should use default secret in non-production if JWT_SECRET is missing', async () => {
+    it('should throw error in non-production if JWT_SECRET is missing', async () => {
         mockConfigService.get.mockImplementation((key) => {
             if (key === 'JWT_SECRET') return undefined;
             if (key === 'NODE_ENV') return 'development';
@@ -99,8 +99,9 @@ describe('AuthService', () => {
         mockPrismaService.tenant.findUnique.mockResolvedValue({ id: 't1', features: '{}' });
         mockPrismaService.staff.update.mockResolvedValue({});
 
-        const result = await service.login({ email: 'test@test.com', password: 'password' });
-        expect(result.token).toBeDefined();
+        await expect(service.login({ email: 'test@test.com', password: 'password' }))
+            .rejects
+            .toThrow('JWT_SECRET is missing');
     });
 
     it('should fail login if password does not match', async () => {
