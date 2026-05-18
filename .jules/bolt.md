@@ -1,0 +1,3 @@
+## 2024-05-18 - pnpm install in server-nest blocks on rebuilds
+**Learning:** If `pnpm install` is run in `server-nest` after an initial failure, it skips native rebuilds (`better-sqlite3`, Prisma), causing `pnpm test:e2e` to fail due to a missing bindings file. Furthermore, formatting the entire repo during linting creates unreviewable patches.
+**Action:** Use `pnpm config set ignore-scripts false && pnpm install` followed by `npm rebuild better-sqlite3` and `pnpm exec prisma generate` to fix environment bindings manually. Only lint/format the files modified by the task to maintain an isolated scope.
