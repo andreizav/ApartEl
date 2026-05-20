@@ -1,0 +1,3 @@
+## 2024-05-20 - Promise.all for Root Entities and in-operator for N+1 Queries
+**Learning:** Sequential database queries during bootstrap (`getBootstrapData`) introduce unnecessary latency in the initialization process. Furthermore, retrieving relational child records inside nested loops creates severe N+1 bottlenecks.
+**Action:** Always fetch independent root entities concurrently using `Promise.all()`. For bulk relational data (e.g., fetching mappings for units), collect identifiers (like `unitId`) using array operations (`flatMap`) and query the database efficiently in batches using Prisma's `in` operator.
