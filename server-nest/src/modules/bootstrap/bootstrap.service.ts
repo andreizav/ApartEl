@@ -6,22 +6,50 @@ export class BootstrapService {
     constructor(private prisma: PrismaService) { }
 
     async getBootstrapData(tenantId: string, user: any, tenant: any) {
-        // Get portfolio with units
-        const groups = await this.prisma.portfolioGroup.findMany({
-            where: { tenantId },
-            include: { units: true }
-        });
+        // ⚡ Bolt: Batch independent root queries to minimize database round-trips
+        const [
+            groups,
+            bookings,
+            clients,
+            staff,
+            transactions,
+            inventory,
+            tenantData
+        ] = await Promise.all([
+            // Get portfolio with units
+            this.prisma.portfolioGroup.findMany({
+                where: { tenantId },
+                include: { units: true }
+            }),
+            // Get bookings
+            this.prisma.booking.findMany({
+                where: { tenantId }
+            }),
+            // Get clients with messages
+            this.prisma.client.findMany({
+                where: { tenantId },
+                include: { messages: true }
+            }),
+            // Get staff
+            this.prisma.staff.findMany({
+                where: { tenantId }
+            }),
+            // Get transactions
+            this.prisma.transaction.findMany({
+                where: { tenantId },
+                orderBy: { date: 'desc' }
+            }),
+            // Get inventory
+            this.prisma.inventoryCategory.findMany({
+                where: { tenantId },
+                include: { items: true }
+            }),
+            // Get tenant settings
+            this.prisma.tenant.findUnique({
+                where: { id: tenantId }
+            })
+        ]);
 
-        // Get bookings
-        const bookings = await this.prisma.booking.findMany({
-            where: { tenantId }
-        });
-
-        // Get clients with messages
-        const clients = await this.prisma.client.findMany({
-            where: { tenantId },
-            include: { messages: true }
-        });
         const clientsWithMessages = clients.map(c => ({
             ...c,
             messages: c.messages.map(m => ({
@@ -30,45 +58,17 @@ export class BootstrapService {
             }))
         }));
 
-        // Get staff
-        const staff = await this.prisma.staff.findMany({
-            where: { tenantId }
-        });
+        // ⚡ Bolt: Resolve N+1 queries by batching based on collected unit IDs
+        const unitIds = groups.flatMap(g => g.units.map(u => u.id));
 
-        // Get transactions
-        const transactions = await this.prisma.transaction.findMany({
-            where: { tenantId },
-            orderBy: { date: 'desc' }
-        });
-
-        // Get inventory
-        const inventory = await this.prisma.inventoryCategory.findMany({
-            where: { tenantId },
-            include: { items: true }
-        });
-
-        // Get channel mappings and ical connections from units
-        const channelMappings: any[] = [];
-        const icalConnections: any[] = [];
-
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
-
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
-        }
-
-        // Get tenant settings
-        const tenantData = await this.prisma.tenant.findUnique({
-            where: { id: tenantId }
-        });
+        const [channelMappings, icalConnections] = await Promise.all([
+            this.prisma.channelMapping.findMany({
+                where: { unitId: { in: unitIds } }
+            }),
+            this.prisma.icalConnection.findMany({
+                where: { unitId: { in: unitIds } }
+            })
+        ]);
 
         const storedOtaConfigs = tenantData?.otaConfigs ? JSON.parse(tenantData.otaConfigs) : {};
         const otaConfigs = {
