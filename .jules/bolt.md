@@ -1,0 +1,3 @@
+## 2024-05-28 - Backend N+1 Queries in Initialization Service
+**Learning:** The NestJS initialization service (`BootstrapService.getBootstrapData`) historically fetched 7 independent root collections using sequential `await` statements and subsequently iterated over nested relations, executing N+1 Prisma calls for channel mappings and iCal connections. Sequential queries drastically amplify database round-trip times and overall initialization latency.
+**Action:** Always fetch independent database collections concurrently using `Promise.all`. For nested relations, extract required identifiers (using `.flatMap` and `.map`) and bulk-fetch the relations using Prisma's `in` operator combined with `Promise.all`.
