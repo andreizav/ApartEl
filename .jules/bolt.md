@@ -1,0 +1,3 @@
+## 2024-06-02 - [Backend] Bootstrap N+1 Query on Nested Relations
+**Learning:** In NestJS with Prisma, fetching nested relations like `channelMappings` and `icalConnections` for every `unit` inside a loop iterating over portfolio `groups` introduces severe $O(N \cdot M)$ N+1 queries. Prisma's `findMany` combined with the `in` operator allows for safe bulk fetching (even with empty arrays), allowing us to convert sequential looped queries into O(1) concurrent bulk queries with `Promise.all`.
+**Action:** When dealing with deep relational data structures (e.g., Portfolio -> Group -> Unit -> Channels), aggregate foreign keys at the highest possible loop level using `flatMap` and fetch the relations in bulk.
