@@ -1,0 +1,3 @@
+## 2024-05-24 - Fetch Multiple Independent Entities Concurrently
+**Learning:** Sequential `await` statements for independent entity fetches in backend services can cause a significant bottleneck in response times due to cumulative database round-trips. In Prisma, fetching relations using loops causes N+1 queries.
+**Action:** Always fetch multiple independent root entities concurrently using `Promise.all`. When retrieving related entities that couldn't be efficiently fetched via `include`, collect IDs using array methods like `flatMap` and perform a single bulk query using the `in` operator combined with `Promise.all` rather than querying inside loops.
