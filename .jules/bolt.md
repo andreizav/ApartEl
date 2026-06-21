@@ -1,0 +1,3 @@
+## $(date +%Y-%m-%d) - Optimize N+1 query in getBootstrapData
+**Learning:** In the `server-nest` project, nested loops performing multiple sequential Prisma queries (e.g., `findMany`) inside `for` loops can be safely refactored using Prisma's `in` operator combined with `Promise.all` for concurrent execution, avoiding severe N+1 bottlenecks. Prisma gracefully handles empty arrays in `in: []` queries without throwing errors.
+**Action:** Always search for `await this.prisma.*` inside `for` loops when profiling for N+1 performance issues, and replace them with bulk operations using array operations like `flatMap` to collect IDs and `Promise.all` to batch queries.
