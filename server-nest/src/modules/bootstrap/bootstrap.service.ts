@@ -48,22 +48,20 @@ export class BootstrapService {
         });
 
         // Get channel mappings and ical connections from units
-        const channelMappings: any[] = [];
-        const icalConnections: any[] = [];
+        // ⚡ Bolt Performance Optimization:
+        // Replaced nested N+1 queries with bulk operations using the `in` operator.
+        // This reduces O(Groups * Units) database queries to exactly 2 queries.
+        // `Promise.all` executes these two independent queries concurrently to minimize round-trip times.
+        const unitIds = groups.flatMap(g => g.units.map(u => u.id));
 
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
-
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
-        }
+        const [channelMappings, icalConnections] = await Promise.all([
+            this.prisma.channelMapping.findMany({
+                where: { unitId: { in: unitIds } }
+            }),
+            this.prisma.icalConnection.findMany({
+                where: { unitId: { in: unitIds } }
+            })
+        ]);
 
         // Get tenant settings
         const tenantData = await this.prisma.tenant.findUnique({
