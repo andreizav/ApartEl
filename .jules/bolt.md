@@ -1,0 +1,3 @@
+## 2025-03-02 - Optimize getBootstrapData concurrent queries and eliminate N+1 problem
+**Learning:** `Promise.all` easily cuts down independent sequential database queries latency in initialization payloads like `getBootstrapData`. A loop generating N+1 queries for nested units mapping was resolved by using an array `flatMap` with Prisma's `where: { in: [] }` operator, which natively ignores empty arrays without throwing errors.
+**Action:** When working with dashboard initialization data, aggressively apply `Promise.all` across disparate tables. Use Array `flatMap` combined with the `in` operator to gather secondary/relational data rather than iterating over database requests.
