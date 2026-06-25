@@ -48,21 +48,23 @@ export class BootstrapService {
         });
 
         // Get channel mappings and ical connections from units
+        // ⚡ Bolt: Optimize N+1 queries by fetching mappings and icals for all units in bulk
+        // Replaces 2*N queries with 2 queries using the IN operator
         const channelMappings: any[] = [];
         const icalConnections: any[] = [];
 
-        for (const group of groups) {
-            for (const unit of group.units) {
-                const mappings = await this.prisma.channelMapping.findMany({
-                    where: { unitId: unit.id }
-                });
-                channelMappings.push(...mappings);
+        const allUnitIds = groups.flatMap(group => group.units.map((unit: any) => unit.id));
 
-                const icals = await this.prisma.icalConnection.findMany({
-                    where: { unitId: unit.id }
-                });
-                icalConnections.push(...icals);
-            }
+        if (allUnitIds.length > 0) {
+            const allMappings = await this.prisma.channelMapping.findMany({
+                where: { unitId: { in: allUnitIds } }
+            });
+            channelMappings.push(...allMappings);
+
+            const allIcals = await this.prisma.icalConnection.findMany({
+                where: { unitId: { in: allUnitIds } }
+            });
+            icalConnections.push(...allIcals);
         }
 
         // Get tenant settings
