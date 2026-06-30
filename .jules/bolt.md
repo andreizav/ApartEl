@@ -1,0 +1,3 @@
+## 2026-06-30 - Concurrent Database Query Refactoring
+**Learning:** In `BootstrapService.getBootstrapData`, multiple independent sequential Prisma queries caused unnecessary database roundtrips. Additionally, fetching child models inside nested loops created severe N+1 query bottlenecks on startup.
+**Action:** Use `Promise.all` to execute independent Prisma database queries concurrently, which significantly reduces response time. To resolve nested relationship fetches, extract foreign keys into an array (e.g., using `flatMap`) and perform a single batch lookup using Prisma's `{ in: ids }` operator.
